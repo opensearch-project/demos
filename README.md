@@ -1,6 +1,6 @@
 ## OpenSearch Demos
 
-* [Opensearch & Opensearch Dashboards](/tree/opensearch-and-opensearch-dashboards)
+* [Opensearch & Opensearch Dashboards](/../../tree/opensearch-and-opensearch-dashboards)
 
 ## Security
 
