@@ -1,11 +1,6 @@
-## My Project
+## OpenSearch Demos
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+* [Opensearch & Opensearch Dashboards](/../../tree/opensearch-and-opensearch-dashboards)
 
 ## Security
 
