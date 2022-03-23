@@ -1,0 +1,13 @@
+tasks:
+  - init: "cd demo && docker-compose pull"
+  - command: "cd demo && docker-compose up"
+  - init: "./demo/check-dashboards.sh"
+    command: "touch ready.txt"
+
+ports:
+  - port: 5601
+    onOpen: ignore
+  - port: 9200
+    onOpen: ignore
+  - port: 9600
+    onOpen: ignore
