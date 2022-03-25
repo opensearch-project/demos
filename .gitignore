@@ -2,3 +2,4 @@ extension/node_modules
 extension/out
 opensearch-vscode-extension-*
 .DS_Store
+ready.txt
