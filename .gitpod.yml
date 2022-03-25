@@ -1,7 +1,15 @@
 tasks:
-  - init: "cd demo && docker-compose pull"
-  - command: "cd demo && docker-compose up"
-  - init: "./demo/check-dashboards.sh"
+  - name: Pre-Commit Hooks Setup
+    init: |
+      pip install pre-commit &&
+      pre-commit install
+
+  - name: Compose Setup
+    init: cd demo && docker-compose pull
+    command: cd demo && docker-compose up
+  
+  - name: Readyness Check
+    init: ./demo/check-dashboards.sh
     command: "touch ready.txt"
 
 ports:

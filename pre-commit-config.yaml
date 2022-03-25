@@ -1,0 +1,16 @@
+repos:
+    # MIT
+-   repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+
+    # Apache 2.0
+-   repo: git://github.com/Yelp/detect-secrets
+    rev: v1.1.0
+    hooks:
+    -   id: detect-secrets
+        args: ["scan"]
