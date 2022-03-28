@@ -9,8 +9,8 @@ tasks:
       pre-commit install
 
   - name: Compose Setup
-    init: cd demo && docker-compose pull
-    command: cd demo && docker-compose up
+    init: cd demo && docker-compose --env-file env pull
+    command: cd demo && docker-compose --env-file env up
   
   - name: Readyness Check
     init: ./demo/check-dashboards.sh
