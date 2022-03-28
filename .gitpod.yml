@@ -1,4 +1,6 @@
 tasks:
+  - init: "chmod 0755 ./extension/build.sh && cd extension && ./build.sh"
+    command: "gp await-port 23000 && code --install-extension ../opensearch-vscode-extension-1.0.0.vsix"
   - init: "cd demo && docker-compose pull"
   - command: "cd demo && docker-compose up"
   - init: "./demo/check-dashboards.sh"
