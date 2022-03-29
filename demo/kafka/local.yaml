@@ -1,0 +1,8 @@
+---
+  clusters:
+    local:
+      broker_list:
+        - "localhost:9092"
+      #zookeeper: "localhost:2181"
+  local_config:
+    cluster: local
