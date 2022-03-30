@@ -1,7 +1,11 @@
 tasks:
   - name: Build and Load the Extension
     init: chmod 0755 ./extension/build.sh && cd extension && ./build.sh
-    command: gp await-port 23000 && code --install-extension ../opensearch-vscode-extension-1.0.0.vsix
+    command: |
+      cat ../html/ready-frag-1.html > ../html/ready.html 
+      gp url 5601 >> ../html/ready.html
+      cat ../html/ready-frag-2.html >> ../html/ready.html
+      gp await-port 23000 && code --install-extension ../opensearch-vscode-extension-1.0.0.vsix
 
   - name: Pre-Commit Hooks Setup
     init: |
