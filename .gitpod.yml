@@ -10,7 +10,7 @@ tasks:
 
   - name: Compose Setup
     init: cd demo && docker-compose --env-file env pull
-    command: cd demo && docker-compose --env-file env up
+    command: docker-compose --env-file env up
   
   - name: Readyness Check
     init: ./demo/check-dashboards.sh
