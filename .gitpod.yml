@@ -14,7 +14,7 @@ tasks:
   
   - name: Readyness Check
     init: ./demo/check-dashboards.sh
-    command: "touch ready.txt"
+    command: touch ready.txt
 
 ports:
   - port: 5601
