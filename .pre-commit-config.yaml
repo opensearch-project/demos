@@ -25,3 +25,10 @@ repos:
     hooks:
     -   id: detect-secrets
         args: ["scan"]
+
+
+    # MIT
+-   repo: https://github.com/IamTheFij/docker-pre-commit
+    rev: v2.1.0
+    hooks:
+        -   id: docker-compose-check
