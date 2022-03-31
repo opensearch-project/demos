@@ -6,12 +6,12 @@ tasks:
   - name: Pre-Commit Hooks Setup
     init: |
       pip install pre-commit &&
-      pre-commit install
+      pre-commit install --install-hooks -t pre-commit -t commit-msg
 
   - name: Compose Setup
     init: cd demo && docker-compose --env-file env pull
     command: docker-compose --env-file env up
-  
+
   - name: Readyness Check
     init: ./demo/check-dashboards.sh
     command: touch ready.txt
