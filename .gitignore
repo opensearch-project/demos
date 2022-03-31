@@ -3,5 +3,9 @@ extension/out
 opensearch-vscode-extension-*
 .DS_Store
 ready.txt
+<<<<<<< HEAD
 
 venv
+=======
+venv
+>>>>>>> basic
