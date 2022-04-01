@@ -9,16 +9,16 @@ Starting a new demo is simple. Create a new branch based off of another using th
 
 From here it's reccomended to follow a few simple patterns.
 
-├── demo
-│   ├── env
-│   ├── docker-compose.yml
-│   ├── docker-compose.override.yml
-│   ├── kakfa
-│   │   ├── config.yml
-│   ├── fluentd
-│   │   ├── Dockerfile
-│   │   ├── config
-│   │   │   ├── config.yml
+├── demo<br />
+│   ├── env<br />
+│   ├── docker-compose.yml<br />
+│   ├── docker-compose.override.yml<br />
+│   ├── kakfa<br />
+│   │   ├── config.yml<br />
+│   ├── fluentd<br />
+│   │   ├── Dockerfile<br />
+│   │   ├── config<br />
+│   │   │   ├── config.yml<br />
 
 1. docker-compose: It is best to try and leave the original docker-compose file alone to prevent merge conflicts when it is updated. To extend it changes can be made into a docker-compose.override.yml file.
 2. Config files: These should be put into nested directory and passed in as a mounted volume whenever necessary. This helps keep the startup time down for the demo.
