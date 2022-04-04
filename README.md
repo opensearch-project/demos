@@ -1,6 +1,11 @@
 ## OpenSearch Demos
 
-* [Opensearch & Opensearch Dashboards](/../../tree/opensearch-and-opensearch-dashboards)
+This repo contains demos for the OpenSearch project. Each demo is arranged in its own _branch_. 
+Here is a list of demos currently available. 
+
+* [Opensearch & Opensearch Dashboards Quickstart](/opensearch-project/demos/tree/quickstart#readme)
+
+Most demos can be run in [GitPod](https://gitpod.io) in the browser or locally with Docker Compose.
 
 
 ## Code of Conduct
