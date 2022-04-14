@@ -7,6 +7,28 @@ Please read through this document before submitting any issues or pull requests 
 information to effectively respond to your bug report or contribution.
 
 
+## Project Structure
+
+For projects built on the demo repository we use a unique branching strategy. We pair this with composable docker-compose files to make core project updates simple.
+
+- Main: The main branch should only contain the top level documents such as:  License, Code of Conduct, etc.
+- Basic: This branch should contain the files passed into the demo branches. It serves as the basis for all the demos.
+
+```
+└── main
+    └── basic
+        ├── kafka-opensearch
+        │   ├── search-kafka
+        │   ├── trace-kafka
+        │   └── monitor-kafka
+        └── opensearch-benchmark
+```
+
+As shown above, all demos are based off of the basic branch. From there, you can nest branches if they share functionality, as shown with the Kafka-OpenSearch demo.
+
+For a more detailed guide on contributing to demos please see the [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md).
+
+
 ## Reporting Bugs/Feature Requests
 
 We welcome you to use the GitHub issue tracker to report bugs or suggest features.
