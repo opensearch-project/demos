@@ -1,6 +1,18 @@
-## OpenSearch Demos
+## OpenSearch Demos - DocBot
 
-This branch contains the barebones starting point for building a live demo for OpenSearch.
+Welcome to the DocBot Project! This is a live chatbot using OpenSearch's documentation, vector search, and lanuguage models!
+
+To install the pre-requisites:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pip install -r dev-requirements.txt
+```
+
+Next we will install our pre-commit hooks. These ensure our code is of good quality.
+```bash
+pre-commit install --install-hooks -t pre-commit -t commit-msg
+```
 
 ## Code of Conduct
 
