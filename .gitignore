@@ -4,3 +4,4 @@ opensearch-vscode-extension-*
 .DS_Store
 ready.txt
 venv
+.env
