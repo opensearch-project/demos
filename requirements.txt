@@ -1,0 +1,3 @@
+opensearch-py
+opensearch-py-ml
+python-dotenv
