@@ -1,6 +1,6 @@
 repos:
     # MIT
--   repo: git://github.com/pre-commit/pre-commit-hooks
+-   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
     hooks:
     -   id: trailing-whitespace
@@ -20,7 +20,7 @@ repos:
 
 
     # Apache 2.0
--   repo: git://github.com/Yelp/detect-secrets
+-   repo: https://github.com/Yelp/detect-secrets
     rev: v1.1.0
     hooks:
     -   id: detect-secrets

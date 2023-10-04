@@ -4,3 +4,6 @@ opensearch-vscode-extension-*
 .DS_Store
 ready.txt
 venv
+.env
+__pycache__*
+.pytest_cache*
