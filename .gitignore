@@ -5,3 +5,5 @@ opensearch-vscode-extension-*
 ready.txt
 venv
 .env
+__pycache__*
+.pytest_cache*

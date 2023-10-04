@@ -1,3 +1,5 @@
 opensearch-py
 opensearch-py-ml
 python-dotenv
+pandas==2.0.3
+deprecated
