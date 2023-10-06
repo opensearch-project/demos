@@ -1,5 +1,7 @@
-from util import opensearch_connection_builder
-import os, json, collections
+import os, json, sys
+sys.path.append('./demo/')
+
+from docbot.util import opensearch_connection_builder
 
 # Using a connection from the OpenSearch connection builder
 # to see an example of using the opensearch connection builder
@@ -12,11 +14,20 @@ import os, json, collections
 DATA_PATH = os.path.abspath(os.path.join(__file__,  "..", "..","..","data"))
 
 def read_files_from_data() -> list:
+  """
+  Args:
+    None
+  Returns:
+    list: a single list of all json file data extracted from the data folder.
+  """
   result = []
+  all_json = [f for f in os.listdir(DATA_PATH) if f.endswith('.json')]
 
-  for f in os.listdir(DATA_PATH):
-    if f.endswith('.json'):
-      path = os.path.join(DATA_PATH, f)
+  if not all_json:
+    raise FileNotFoundError("Cannot find JSON files in /demos/data")
+
+  for file in all_json:
+      path = os.path.join(DATA_PATH, file)
       with open(path) as f:
         if result:
           result.extend(json.load(f))
