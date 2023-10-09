@@ -27,7 +27,7 @@ def read_files_from_data() -> list:
   all_json = [f for f in os.listdir(DATA_PATH) if f.endswith('.json')]
 
   if not all_json:
-    raise FileNotFoundError("Cannot find JSON files in /demos/data")
+    raise FileNotFoundError("Failed to find JSON files in /demos/data")
 
   for file in all_json:
       path = os.path.join(DATA_PATH, file)
@@ -39,12 +39,22 @@ def read_files_from_data() -> list:
 
   return result
 
-def ingest_to_opensearch(data):
-  # client = opensearch_connection_builder()
-  # client.bulk()
-  pass
+def ingest_to_opensearch(data) -> int:
+  client = opensearch_connection_builder()
+  docs = []
+  for point in range(len(data)):
+    docs.append({"index": {"_index": "docbot", "_id": point}})
+    docs.append(json.dumps(data_list[point]))
+
+  response = client.bulk(docs)
+  if response["errors"]:
+    raise ValueError("Failed to insert data into client.")
+  else:
+    print(f"Bulk-inserted {len(response['items'])} items.")
+
+  return 1
 
 if __name__=="__main__":
   # do ingestions
   data_list = read_files_from_data()
-  print(data_list)
+  ingest_to_opensearch(data_list)
