@@ -40,6 +40,12 @@ def read_files_from_data() -> list:
   return result
 
 def ingest_to_opensearch(data) -> int:
+  """
+  Args:
+    data: a list of json documents to be ingested
+  Returns:
+    int: 1 if successfully ingested
+  """
   client = opensearch_connection_builder()
   docs = []
   for point in range(len(data)):
