@@ -1,4 +1,7 @@
 import os, json, sys
+from util import opensearch_connection_builder
+# import cluster_bootstrap
+
 sys.path.append('./demo/')
 
 from docbot.util import opensearch_connection_builder
@@ -36,6 +39,12 @@ def read_files_from_data() -> list:
 
   return result
 
+def ingest_to_opensearch(data):
+  # client = opensearch_connection_builder()
+  # client.bulk()
+  pass
+
 if __name__=="__main__":
   # do ingestions
   data_list = read_files_from_data()
+  print(data_list)
