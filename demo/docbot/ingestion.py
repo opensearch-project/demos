@@ -44,7 +44,7 @@ def ingest_to_opensearch(data) -> int:
   Args:
     data: a list of json documents to be ingested
   Returns:
-    int: 1 if successfully ingested
+    None if successful, raise exception if failed
   """
   client = opensearch_connection_builder()
   docs = []
@@ -58,9 +58,10 @@ def ingest_to_opensearch(data) -> int:
   else:
     print(f"Bulk-inserted {len(response['items'])} items.")
 
-  return 1
-
 if __name__=="__main__":
   # do ingestions
-  data_list = read_files_from_data()
-  ingest_to_opensearch(data_list)
+  try:
+    data_list = read_files_from_data()
+    ingest_to_opensearch(data_list)
+  except:
+    print("An exception occured without finishing ingestion.")
