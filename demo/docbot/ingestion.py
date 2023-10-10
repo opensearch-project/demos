@@ -1,5 +1,4 @@
 import os, json, sys
-from util import opensearch_connection_builder
 # import cluster_bootstrap
 
 sys.path.append('./demo/')
@@ -16,7 +15,7 @@ from docbot.util import opensearch_connection_builder
 # Documents should be ingested from the /data/ dir
 DATA_PATH = os.path.abspath(os.path.join(__file__,  "..", "..","..","data"))
 
-def read_files_from_data(path=DATA_PATH) -> list:
+def read_files_from_data(PATH=DATA_PATH) -> list:
   """
   Args:
     None
@@ -24,13 +23,17 @@ def read_files_from_data(path=DATA_PATH) -> list:
     list: a single list of all json file data extracted from the data folder.
   """
   result = []
-  all_json = [f for f in os.listdir(path) if f.endswith('.json')]
+
+  try:
+    all_json = [f for f in os.listdir(PATH) if f.endswith('.json')]
+  except:
+    raise NotADirectoryError("Failed to load directory: " + PATH)
 
   if not all_json:
     raise FileNotFoundError("Failed to find JSON files in /demos/data")
 
   for file in all_json:
-      path = os.path.join(path, file)
+      path = os.path.join(PATH, file)
       with open(path) as f:
         if result:
           result.extend(json.load(f))
