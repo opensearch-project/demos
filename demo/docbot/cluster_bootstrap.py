@@ -4,6 +4,18 @@ from util import opensearch_connection_builder
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder
 
+import dotenv
+from os import getenv
+
+dotenv.load_dotenv()
+COHERE_KEY = getenv('COHERE_KEY')
+MODEL_STATE = {
+    "model_group_id": "",
+    "connector_id": "",
+    "model_id": ""
+}
+
+
 
 def initialize_cluster_settings(client):
     current_settings = client.cluster.get_settings()
@@ -41,22 +53,22 @@ def initialize_model_group(client):
     response = client.ml.model_groups.get(model_group_name)
 
     # Check if the Cohere model group already exists
-    if response and 'name' in response and response['name'] == model_group_name:
-        print(f"Model group '{model_group_name}' already exists.")
-        return
+    if not (response and 'name' in response and response['name'] == model_group_name):
+        data = {
+            "name": model_group_name,
+            "description": "Public Cohere Model Group",
+            "access_mode": "public"
+        }
 
-    data = {
-        "name": model_group_name,
-        "description": "Public Cohere Model Group",
-        "access_mode": "public"
-    }
+        response = client.ml.model_groups.register(body=data)  # Adjust based on the actual method name and structure
 
-    response = client.ml.model_groups.register(body=data)  # Adjust based on the actual method name and structure
+        if response and 'acknowledged' in response and response['acknowledged']:
+            print("Model group initialized successfully!")
+            MODEL_STATE["model_group_id"] = response["_id"]
+        else:
+            print(f"Failed to initialize model group. Response: {response}")
+    else: print(f"Model group '{model_group_name}' already exists.")
 
-    if response and 'acknowledged' in response and response['acknowledged']:
-        print("Model group initialized successfully!")
-    else:
-        print(f"Failed to initialize model group. Response: {response}")
 
 
 def initialize_connector(client):
@@ -67,7 +79,7 @@ def initialize_connector(client):
         "version": "1.0",
         "protocol": "http",
         "credential": {
-            "cohere_key": "<COHERE KEY HERE>"  # Replace with actual key or get from config
+            "cohere_key": COHERE_KEY
         },
         "parameters": {
             "model": "embed-english-v2.0",
@@ -86,18 +98,17 @@ def initialize_connector(client):
         }]
     }
 
-    # Check if the connector already exists
-    existing_connectors = client.ml_connectors.list()
-    if any(connector['name'] == "Cohere Connector" for connector in existing_connectors):
-        print("Connector 'Cohere Connector' already exists. Skipping initialization.")
-        return
+    existing_connectors = client.ml_connectors.list() #this needs to be fixed
+    if not (any(connector['name'] == "Cohere Connector" for connector in existing_connectors)):
+        response = client.ml_connectors.create(body=connector_data) #this needs to be fixed
 
-    response = client.ml_connectors.create(body=connector_data)
-
-    if response and 'acknowledged' in response and response['acknowledged']:
-        print("Connector 'Cohere Connector' initialized successfully!")
+        if response and 'acknowledged' in response and response['acknowledged']:
+            print("Connector 'Cohere Connector' initialized successfully!")
+            MODEL_STATE["connector_id"] = response["_id"]
+        else:
+            print("Failed to initialize connector.")
     else:
-        print("Failed to initialize connector.")
+        print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
 
@@ -108,8 +119,8 @@ def initialize_model(client):
         "name": "embed-english-v2.0",
         "function_name": "remote",
         "description": "test model",
-        "model_group_id": "<MODEL_GROUP_ID>",  # Replace with the appropriate model group ID or fetch it
-        "connector_id": "<CONNECTOR_ID>"  # Replace with the appropriate connector ID or fetch it
+        "model_group_id": MODEL_STATE["model_group_id"],
+        "connector_id": MODEL_STATE["connector_id"]
     }
 
     # Check if the model already exists
@@ -130,14 +141,12 @@ def initialize_model(client):
 
 def initialize_ingestion_pipeline(client):
     # Fetch the model ID somehow based on how we created the model ID earlier ^
-    model_id = "<MODEL_ID>"
-
     pipeline_data = {
         "description": "Cohere Neural Search Pipeline",
         "processors": [
             {
                 "text_embedding": {
-                    "model_id": model_id,
+                    "model_id": MODEL_STATE["model_id"],
                     "field_map": {
                         "content": "content_embedding"
                     }
@@ -164,8 +173,7 @@ def initialize_ingestion_pipeline(client):
 
 
 
-def initialize_index():
-    client = opensearch_connection_builder()
+def initialize_index(client):
 
     # Define the index settings and mappings
     index_data = {
