@@ -14,6 +14,8 @@ Next we will install our pre-commit hooks. These ensure our code is of good qual
 pre-commit install --install-hooks -t pre-commit -t commit-msg
 ```
 
+
+
 ## Code of Conduct
 
 This project has adopted an [Open Source Code of Conduct](CODE_OF_CONDUCT.md).

@@ -9,7 +9,7 @@ ADMIN_UN = getenv('ADMIN_UN')
 HOSTS = getenv('HOSTS')
 DEVELOPMENT= getenv('DEVELOPMENT')
 
-def opensearch_connection_builder() -> MLCommonClient:
+def opensearch_connection_builder(ml_client=False) -> MLCommonClient | OpenSearch:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
@@ -20,6 +20,11 @@ def opensearch_connection_builder() -> MLCommonClient:
   if DEVELOPMENT:
     config['verify_certs'] = False
 
-  return MLCommonClient(
-    OpenSearch(**config)
-  )
+  if ml_client:
+    client = MLCommonClient(
+      OpenSearch(**config)
+    )
+  else:
+    client = OpenSearch(**config)
+
+  return client
