@@ -32,7 +32,6 @@ def initialize_cluster_settings(client):
         ]
     }
 
-    # Check if already exists
     if 'persistent' in current_settings and current_settings['persistent'] == data:
         print("Cluster settings are already initialized!")
         return
@@ -113,7 +112,6 @@ def initialize_connector(client):
 
 
 def initialize_model(client):
-
     # Define the model data. For now, placeholders are used for model_group_id and connector_id.
     model_data = {
         "name": "embed-english-v2.0",
