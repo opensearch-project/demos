@@ -1,6 +1,6 @@
 # Place where we will validate the clusters
 # configuration and settings on import
-
+from opensearchpy import OpenSearch
 
 # Check and apply cluster settings
 def initialize_cluster_settings():
@@ -20,6 +20,42 @@ def initialize_cluster_settings():
   # }
 
   pass
+
+def init_index_template(client: OpenSearch):
+  """
+  Args:
+    Client: OpenSearch
+  Returns:
+    returns if template was created or is exists
+  """
+
+  if not client.indices.exists_index_template("nlp-template"):
+    template = {
+    "index_patterns": [
+      "cohere*"
+    ],
+    "template": {
+      "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 2,
+        "codec": "zstd_no_dict"
+        },
+      "mappings": {
+        "properties": {
+          "data": {
+            "index": False
+            },
+          "ancestors": {
+            "index": False
+            }
+          }
+        }
+      }
+    }
+
+    response = client.indices.put_index_template("nlp-template", body=template)
+    if not response["acknowledged"]:
+      raise Exception("Unable to create index template.")
 
 
 def initialize_model_group():
