@@ -1,5 +1,4 @@
 import os, json, sys
-from util import opensearch_connection_builder
 # import cluster_bootstrap
 
 sys.path.append('./demo/')
@@ -16,7 +15,7 @@ from docbot.util import opensearch_connection_builder
 # Documents should be ingested from the /data/ dir
 DATA_PATH = os.path.abspath(os.path.join(__file__,  "..", "..","..","data"))
 
-def read_files_from_data() -> list:
+def read_files_from_data(PATH=DATA_PATH) -> list:
   """
   Args:
     None
@@ -24,13 +23,17 @@ def read_files_from_data() -> list:
     list: a single list of all json file data extracted from the data folder.
   """
   result = []
-  all_json = [f for f in os.listdir(DATA_PATH) if f.endswith('.json')]
+
+  try:
+    all_json = [f for f in os.listdir(PATH) if f.endswith('.json')]
+  except:
+    raise NotADirectoryError("Failed to load directory: " + PATH)
 
   if not all_json:
-    raise FileNotFoundError("Cannot find JSON files in /demos/data")
+    raise FileNotFoundError("Failed to find JSON files in /demos/data")
 
   for file in all_json:
-      path = os.path.join(DATA_PATH, file)
+      path = os.path.join(PATH, file)
       with open(path) as f:
         if result:
           result.extend(json.load(f))
@@ -39,12 +42,29 @@ def read_files_from_data() -> list:
 
   return result
 
-def ingest_to_opensearch(data):
-  # client = opensearch_connection_builder()
-  # client.bulk()
-  pass
+def ingest_to_opensearch(data) -> int:
+  """
+  Args:
+    data: a list of json documents to be ingested
+  Returns:
+    None if successful, raise exception if failed
+  """
+  client = opensearch_connection_builder()
+  docs = []
+  for point in range(len(data)):
+    docs.append({"index": {"_index": "docbot", "_id": point}})
+    docs.append(json.dumps(data_list[point]))
+
+  response = client.bulk(docs)
+  if response["errors"]:
+    raise ValueError("Failed to insert data into client.")
+  else:
+    print(f"Bulk-inserted {len(response['items'])} items.")
 
 if __name__=="__main__":
   # do ingestions
-  data_list = read_files_from_data()
-  print(data_list)
+  try:
+    data_list = read_files_from_data()
+    ingest_to_opensearch(data_list)
+  except:
+    print("An exception occured without finishing ingestion.")
