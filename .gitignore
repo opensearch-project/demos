@@ -7,3 +7,5 @@ venv
 .env
 __pycache__*
 .pytest_cache*
+*.dtmp
+*.bkp
