@@ -3,7 +3,7 @@ import os, json, sys
 
 sys.path.append('./demo/')
 
-from docbot.util import opensearch_connection_builder
+from docbot.util import opensearch_connection_builder, shorten_json_file_same_index
 
 # Using a connection from the OpenSearch connection builder
 # to see an example of using the opensearch connection builder
@@ -18,7 +18,7 @@ DATA_PATH = os.path.abspath(os.path.join(__file__,  "..", "..","..","data"))
 def read_files_from_data(PATH=DATA_PATH) -> list:
   """
   Args:
-    None
+    PATH: a string of file path to the data folder
   Returns:
     list: a single list of all json file data extracted from the data folder.
   """
@@ -35,10 +35,9 @@ def read_files_from_data(PATH=DATA_PATH) -> list:
   for file in all_json:
       path = os.path.join(PATH, file)
       with open(path) as f:
-        if result:
-          result.extend(json.load(f))
-        else:
-          result = json.load(f)
+        for json_file in json.load(f):
+          shortened_json_files = shorten_json_file_same_index(json_file)
+          result.extend(shortened_json_files)
 
   return result
 
