@@ -15,17 +15,14 @@ DEVELOPMENT= getenv('DEVELOPMENT')
 
 from opensearch_py_ml.ml_commons.ml_common_utils import (
     ML_BASE_URI,
-    MODEL_FORMAT_FIELD,
-    MODEL_GROUP_ID,
-    MODEL_NAME_FIELD,
-    MODEL_VERSION_FIELD,
     TIMEOUT,
 )
 from typing import Union, Any
 from datetime import time
 
+
 class MLClient(MLCommonClient):
-  def register_model_group(self, model_group_meta_json: dict):
+  def register_model_group(self, model_group_meta_json: dict) -> str:
     """
     This method registers a model group with ML Commons' register api
 
@@ -45,7 +42,39 @@ class MLClient(MLCommonClient):
 
     return output["model_group_id"]
 
-  def create_connector(self, connector_meta_json: dict):
+
+  def get_model_group_id(self, model_group_name: str=None) -> str | None:
+    """
+    This gets a model group id by doing a search on the model name
+
+    :param model_group_name: the model group name
+    :type model_group_name: str
+    :return: returns a unique id of the model group or none if it doesnt exist
+    :rtype: string | None
+    """
+    query = {
+       "query": {
+        "match": {}
+      }
+    }
+
+    if model_group_name is not None:
+       query["query"]["match"].update({"name": model_group_name})
+    else: raise Exception("Model group name and id cannot both be empty")
+
+    output = self._client.transport.perform_request(
+        method="POST",
+        url=f"{ML_BASE_URI}/model_groups/_search",
+        body=query,
+    )
+
+    if not output["hits"]["total"]["value"] > 0:
+       return None
+
+    return output["hits"]["hits"][0]["_id"]
+
+
+  def create_connector(self, connector_meta_json: dict) -> str:
     """
     This method creates a ML Connector using ML Commons' create api
 
@@ -64,7 +93,38 @@ class MLClient(MLCommonClient):
 
     return output["connector_id"]
 
-  def register_connector_model(self, model_meta_json: dict):
+
+  def get_connector_id(self, connector_name: str = None) -> str | None:
+    """
+    This gets a connector id by doing a search on the connector name
+
+    :param connector_name: the connector name
+    :type connector_name: string
+    :return: returns a unique id of the connector or none if it doesnt exist
+    :rtype: string | None
+    """
+    query = {
+       "query": {
+        "match": {}
+      }
+    }
+
+    if connector_name is not None:
+       query["query"]["match"].update({"name": connector_id})
+    else: raise Exception("Model group name and id cannot both be empty")
+
+    output = self._client.transport.perform_request(
+        method="POST",
+        url=f"{ML_BASE_URI}/connectors/_search",
+        body=query,
+    )
+
+    if not output["hits"]["total"]["value"] > 0:
+       return None
+
+    return output["hits"]["hits"][0]["_id"]
+
+  def register_connector_model(self, model_meta_json: dict) -> str:
         """
         This method creates a model using an already existing connector
 
@@ -94,7 +154,7 @@ class MLClient(MLCommonClient):
         return status["model_id"]
 
 
-  def delete_model_group(self, model_group_id: dict):
+  def delete_model_group(self, model_group_id: dict) -> dict:
     """
     This method sends the pretrained model info to ML Commons' register api
 
@@ -108,13 +168,13 @@ class MLClient(MLCommonClient):
         url=f"{ML_BASE_URI}/model_groups/{model_group_id}",
     )
 
-  def delete_connector(self, connector_id: str) -> object:
+  def delete_connector(self, connector_id: str) -> dict:
       """
-      This method deletes a model from opensearch cluster (using ml commons api)
+      This method deletes a connector from opensearch cluster (using ml commons api)
 
-      :param model_id: unique id of the model
-      :type model_id: string
-      :return: returns a json object, with detailed information about the deleted model
+      :param connector_id: unique id of the connector
+      :type connector_id: string
+      :return: returns a json object, with detailed information about the deleted connector
       :rtype: object
       """
 
