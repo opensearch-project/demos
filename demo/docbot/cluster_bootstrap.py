@@ -1,6 +1,5 @@
 import requests
 import os, json, sys
-from util import opensearch_connection_builder
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder
 from opensearchpy import OpenSearch
@@ -45,7 +44,7 @@ def initialize_cluster_settings(client):
         print("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: OpenSearch):
+def init_index_template(client: OpenSearch, template_name = "nlp-template"):
   """
   Args:
     Client: OpenSearch
@@ -53,7 +52,7 @@ def init_index_template(client: OpenSearch):
     returns if template was created or is exists
   """
 
-  if not client.indices.exists_index_template("nlp-template"):
+  if not client.indices.exists_template(name=template_name):
     template = {
     "index_patterns": [
       "cohere*"
@@ -77,11 +76,12 @@ def init_index_template(client: OpenSearch):
       }
     }
 
-    response = client.indices.put_index_template("nlp-template", body=template)
-    if not response["acknowledged"]:
-      raise Exception("Unable to create index template.")
-    
-        
+    response = client.indices.put_template(name=template_name, body=template)
+    print(response)
+    if not response['acknowledged']:
+      raise Exception(response)
+
+
 def initialize_model_group(client):
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
     model_group_name = "Cohere_Group"
