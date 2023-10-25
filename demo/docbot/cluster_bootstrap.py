@@ -1,8 +1,7 @@
-import requests
-import os, json, sys
+import sys
 from util import opensearch_connection_builder
 sys.path.append('./demo/')
-from docbot.util import opensearch_connection_builder
+from docbot.util import opensearch_connection_builder, MLClient
 from opensearchpy import OpenSearch
 
 import dotenv
@@ -17,6 +16,7 @@ MODEL_STATE = {
 }
 
 
+
 def initialize_cluster_settings(client: OpenSearch) -> None:
     """
     Args:
@@ -24,7 +24,7 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
     Returns:
         returns None if cluster settings was created or is exists else raise Exception
     """
-    current_settings = client.cluster.get_settings()
+    current_settings = client._client.cluster.get_settings()
 
     data = {
         "plugins.ml_commons.allow_registering_model_via_url": True,
@@ -51,14 +51,15 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         raise Exception("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: OpenSearch) -> None:
+def init_index_template(client: MLClient, template_name = "nlp-template") -> None:
+
   """
   Args:
     Client: OpenSearch
   Returns:
     returns None if template was created or is exists else raises Exception
   """
-  if not client.indices.exists_index_template("nlp-template"):
+  if not client._client.indices.exists_template(name=template_name):
     template = {
     "index_patterns": [
       "cohere*"
@@ -82,12 +83,12 @@ def init_index_template(client: OpenSearch) -> None:
       }
     }
 
-    response = client.indices.put_index_template("nlp-template", body=template)
+    response = client._client.indices.put_template(name=template_name, body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
 
 
-def initialize_model_group(client: OpenSearch) -> None:
+def initialize_model_group(client: MLClient) -> None:
     """
     Args:
         Client: OpenSearch
@@ -97,28 +98,28 @@ def initialize_model_group(client: OpenSearch) -> None:
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
     model_group_name = "Cohere_Group"
 
-    response = client.ml.model_groups.get(model_group_name)
+    response = client.get_model_group_id(model_group_name=model_group_name)
 
     # Check if the Cohere model group already exists
-    if not (response and 'name' in response and response['name'] == model_group_name):
+    if response is not None:
         data = {
             "name": model_group_name,
             "description": "Public Cohere Model Group",
             "access_mode": "public"
         }
 
-        response = client.ml.model_groups.register(body=data)  # Adjust based on the actual method name and structure
+        response = client.register_model_group(body=data)  # Adjust based on the actual method name and structure
 
-        if response and 'acknowledged' in response and response['acknowledged']:
+        if isinstance(response, str):
             print("Model group initialized successfully!")
-            MODEL_STATE["model_group_id"] = response["_id"]
+            MODEL_STATE["model_group_id"] = response
         else:
             raise Exception(f"Failed to initialize model group. Response: {response}")
     else: print(f"Model group '{model_group_name}' already exists.")
 
 
 
-def initialize_connector(client: OpenSearch) -> None:
+def initialize_connector(client: MLClient) -> None:
     """
     Args:
         Client: OpenSearch
@@ -151,21 +152,20 @@ def initialize_connector(client: OpenSearch) -> None:
         }]
     }
 
-    existing_connectors = client.ml_connectors.list() #this needs to be fixed
-    if not (any(connector['name'] == "Cohere Connector" for connector in existing_connectors)):
-        response = client.ml_connectors.create(body=connector_data) #this needs to be fixed
+    connector_id = client.get_connector_id(connector_name="Cohere Connector")
+    if connector_id is not None:
+        response = client.create_connector(connector_data) #this needs to be fixed
 
-        if response and 'acknowledged' in response and response['acknowledged']:
+        if isinstance(response, str):
             print("Connector 'Cohere Connector' initialized successfully!")
-            MODEL_STATE["connector_id"] = response["_id"]
+            MODEL_STATE["connector_id"] = response
         else:
             raise Exception("Failed to initialize connector.")
     else:
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
-
-def initialize_model(client: OpenSearch) -> None:
+def initialize_model(client: MLClient) -> None:
     """
     Args:
         Client: OpenSearch
@@ -182,20 +182,29 @@ def initialize_model(client: OpenSearch) -> None:
     }
 
     # Check if the model already exists
-    existing_models = client.ml_models.list()
-    if any(model['name'] == "embed-english-v2.0" for model in existing_models):
+    existing_models = client.search_model({
+        "query": {
+            "match": {
+                "name": "embed-english-v2.0"
+            }
+        }
+    })
+
+    if existing_models["hits"]["total"]["value"] > 0:
         print("Model 'embed-english-v2.0' already exists. Skipping initialization.")
-        return
-
-    # Register (and deploy) the model
-    response = client.ml_models.register(body=model_data, params={"deploy": "true"})
-
-    if response and 'acknowledged' in response and response['acknowledged']:
-        print("Model 'embed-english-v2.0' initialized successfully!")
+        MODEL_STATE["connector_id"] = existing_models["hits"]["hits"][0]["_id"]
     else:
-        raise Exception("Failed to initialize model.")
+        # Register (and deploy) the model
+        response = client.register_connector_model(model_meta_json=model_data)
 
-def initialize_ingestion_pipeline(client):
+        if isinstance(response, str):
+            print("Model 'embed-english-v2.0' initialized successfully!")
+        else:
+           raise Exception("Failed to initialize model.")
+
+
+
+def initialize_ingestion_pipeline(client: MLClient):
     """
     Args:
         Client: OpenSearch
@@ -219,14 +228,14 @@ def initialize_ingestion_pipeline(client):
 
     # Check if the pipeline already exists
     try:
-        existing_pipeline = client.ingest.get_pipeline(id="cohere-ingest-pipeline")
+        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
         if existing_pipeline:
             print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
             return
     except Exception as e:
         print(f"An error occurred while checking for any existing pipeline: {e}")
 
-    response = client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
+    response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
 
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
@@ -235,7 +244,7 @@ def initialize_ingestion_pipeline(client):
 
 
 
-def initialize_index(client: OpenSearch) -> None:
+def initialize_index(client: MLClient) -> None:
     """
     Args:
         Client: OpenSearch
@@ -268,7 +277,7 @@ def initialize_index(client: OpenSearch) -> None:
 
     # Check if the index already exists
     try:
-        index_exists = client.indices.exists(index="cohere-index")
+        index_exists = client._client.indices.exists(index="cohere-index")
         if index_exists:
             print("Index 'cohere-index' already exists. Skipping initialization.")
             return
@@ -276,7 +285,7 @@ def initialize_index(client: OpenSearch) -> None:
         print(f"An error occurred while checking for the index: {e}")
 
     # Create the index
-    response = client.indices.create(index="cohere-index", body=index_data)
+    response = client._client.indices.create(index="cohere-index", body=index_data)
 
     # Check if the request was successful
     if response and 'acknowledged' in response and response['acknowledged']:
@@ -287,7 +296,7 @@ def initialize_index(client: OpenSearch) -> None:
 
 def main():
     try:
-        client = opensearch_connection_builder()
+        client = opensearch_connection_builder(ml_client=True)
         initialize_cluster_settings(client)
         initialize_model_group(client)
         initialize_connector(client)
