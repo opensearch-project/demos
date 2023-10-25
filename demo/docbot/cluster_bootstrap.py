@@ -17,7 +17,13 @@ MODEL_STATE = {
 }
 
 
-def initialize_cluster_settings(client):
+def initialize_cluster_settings(client: OpenSearch) -> None:
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if cluster settings was created or is exists else raise Exception
+    """
     current_settings = client.cluster.get_settings()
 
     data = {
@@ -42,17 +48,16 @@ def initialize_cluster_settings(client):
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Cluster settings initialized successfully!")
     else:
-        print("Failed to initialize cluster settings.")
+        raise Exception("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: OpenSearch):
+def init_index_template(client: OpenSearch) -> None:
   """
   Args:
     Client: OpenSearch
   Returns:
-    returns if template was created or is exists
+    returns None if template was created or is exists else raises Exception
   """
-
   if not client.indices.exists_index_template("nlp-template"):
     template = {
     "index_patterns": [
@@ -80,9 +85,15 @@ def init_index_template(client: OpenSearch):
     response = client.indices.put_index_template("nlp-template", body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
-    
-        
-def initialize_model_group(client):
+
+
+def initialize_model_group(client: OpenSearch) -> None:
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if model group was created or is exists else raises Exception
+    """
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
     model_group_name = "Cohere_Group"
 
@@ -102,12 +113,18 @@ def initialize_model_group(client):
             print("Model group initialized successfully!")
             MODEL_STATE["model_group_id"] = response["_id"]
         else:
-            print(f"Failed to initialize model group. Response: {response}")
+            raise Exception(f"Failed to initialize model group. Response: {response}")
     else: print(f"Model group '{model_group_name}' already exists.")
 
 
 
-def initialize_connector(client):
+def initialize_connector(client: OpenSearch) -> None:
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if connector was created or is exists else raises Exception
+    """
     # Once again, only allowing for the Cohere Connector. We can change this later on.
     connector_data = {
         "name": "Cohere Connector",
@@ -142,13 +159,19 @@ def initialize_connector(client):
             print("Connector 'Cohere Connector' initialized successfully!")
             MODEL_STATE["connector_id"] = response["_id"]
         else:
-            print("Failed to initialize connector.")
+            raise Exception("Failed to initialize connector.")
     else:
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
 
-def initialize_model(client):
+def initialize_model(client: OpenSearch) -> None:
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if model was created or is exists else raises Exception
+    """
     # Define the model data. For now, placeholders are used for model_group_id and connector_id.
     model_data = {
         "name": "embed-english-v2.0",
@@ -170,11 +193,15 @@ def initialize_model(client):
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Model 'embed-english-v2.0' initialized successfully!")
     else:
-        print("Failed to initialize model.")
-
-
+        raise Exception("Failed to initialize model.")
 
 def initialize_ingestion_pipeline(client):
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if ingestion pipeline was created or is exists else raises Exception
+    """
     # Fetch the model ID somehow based on how we created the model ID earlier ^
     pipeline_data = {
         "description": "Cohere Neural Search Pipeline",
@@ -196,20 +223,25 @@ def initialize_ingestion_pipeline(client):
         if existing_pipeline:
             print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
             return
-    except:
-        pass
+    except Exception as e:
+        print(f"An error occurred while checking for any existing pipeline: {e}")
 
     response = client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
 
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
     else:
-        print("Failed to initialize pipeline.")
+        raise Exception("Failed to initialize pipeline.")
 
 
 
-def initialize_index(client):
-
+def initialize_index(client: OpenSearch) -> None:
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if index was created or is exists else raises Exception
+    """
     # Define the index settings and mappings
     index_data = {
         "settings": {
@@ -250,16 +282,19 @@ def initialize_index(client):
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Index 'cohere-index' created successfully!")
     else:
-        print("Failed to create index.")
+        raise Exception("Failed to create index.")
 
 
 def main():
-  client = opensearch_connection_builder()
-  initialize_cluster_settings(client)
-  initialize_model_group(client)
-  initialize_connector(client)
-  initialize_model(client)
-  initialize_ingestion_pipeline(client)
-  initialize_index(client)
+    try:
+        client = opensearch_connection_builder()
+        initialize_cluster_settings(client)
+        initialize_model_group(client)
+        initialize_connector(client)
+        initialize_model(client)
+        initialize_ingestion_pipeline(client)
+        initialize_index(client)
+    except Exception as e:
+        print(f"An error occurred while initializing cluster bootstrap: {e}")
 
 main()
