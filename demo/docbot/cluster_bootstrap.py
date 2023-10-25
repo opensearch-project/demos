@@ -44,15 +44,16 @@ def initialize_cluster_settings(client: MLClient):
         print("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: MLClient):
+
+def init_index_template(client: MLClient, template_name = "nlp-template"):
   """
   Args:
     Client: OpenSearch
   Returns:
     returns if template was created or is exists
   """
-
-  if not client._client.indices.exists_index_template("nlp-template"):
+  
+  if not client._client.indices.exists_template(name=template_name):
     template = {
     "index_patterns": [
       "cohere*"
@@ -76,11 +77,11 @@ def init_index_template(client: MLClient):
       }
     }
 
-    response = client._client.indices.put_index_template("nlp-template", body=template)
+    response = client._client.indices.put_template(name=template_name, body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
 
-
+      
 def initialize_model_group(client: MLClient):
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
     model_group_name = "Cohere_Group"
