@@ -48,21 +48,19 @@ def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
   if overlap <= 0 or overlap >= 1:
     raise ValueError("Inappropriate Argument: overlap must be within 0 and 1")
 
-  # We assume the average word is 5 characters long, this is surprisingly accurate from my testing on the data!
-  char_per_word = 5
-  sentence_to_split = json_file['content']
+  sentence_to_split = json_file['content'].split(" ")
   temp = None
   result = []
 
-  while len(sentence_to_split) > (num_words * char_per_word):
+  while len(sentence_to_split) > (num_words):
     overlapped_bound = int(num_words-(num_words*overlap))
     temp = deepcopy(json_file)
-    temp['content'] = sentence_to_split[:num_words*char_per_word]
+    temp['content'] = " ".join(sentence_to_split[:num_words])
     result.append(temp)
-    sentence_to_split = sentence_to_split[overlapped_bound*char_per_word:]
+    sentence_to_split = sentence_to_split[overlapped_bound:]
 
   temp = deepcopy(json_file)
-  temp['content'] = sentence_to_split
+  temp['content'] = " ".join(sentence_to_split)
   result.append(temp)
 
   return result
