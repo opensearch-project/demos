@@ -1,6 +1,5 @@
 import requests
 import os, json, sys
-from util import opensearch_connection_builder
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder
 from opensearchpy import OpenSearch
@@ -80,8 +79,8 @@ def init_index_template(client: OpenSearch):
     response = client.indices.put_index_template("nlp-template", body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
-    
-        
+
+
 def initialize_model_group(client):
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
     model_group_name = "Cohere_Group"
@@ -262,4 +261,4 @@ def main():
   initialize_ingestion_pipeline(client)
   initialize_index(client)
 
-main()
+# main()

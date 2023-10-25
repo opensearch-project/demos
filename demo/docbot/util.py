@@ -48,7 +48,7 @@ def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
   if overlap <= 0 or overlap >= 1:
     raise ValueError("Inappropriate Argument: overlap must be within 0 and 1")
 
-  sentence_to_split = json_file['content'].split(" ")
+  sentence_to_split = json_file['content'].split()
   temp = None
   result = []
 
