@@ -31,6 +31,8 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         "plugins.ml_commons.only_run_on_ml_node": False,
         "plugins.ml_commons.connector_access_control_enabled": True,
         "plugins.ml_commons.model_access_control_enabled": True,
+        "plugins.ml_commons.memory_feature_enabled": True,
+        "plugins.ml_commons.rag_pipeline_feature_enabled": True,
         "plugins.ml_commons.trusted_connector_endpoints_regex": [
             "^https://runtime\\.sagemaker\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
             "^https://api\\.openai\\.com/.*$",
