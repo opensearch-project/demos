@@ -17,7 +17,7 @@ MODEL_STATE = {
 
 
 
-def initialize_cluster_settings(client: OpenSearch) -> None:
+def initialize_cluster_settings(client: OpenSearch, cluster_setting=None) -> None:
     """
     Args:
         Client: OpenSearch
@@ -25,24 +25,24 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         returns None if cluster settings was created or is exists else raise Exception
     """
     current_settings = client._client.cluster.get_settings()
+    if cluster_setting is None:
+        cluster_setting = {
+            "plugins.ml_commons.allow_registering_model_via_url": True,
+            "plugins.ml_commons.only_run_on_ml_node": False,
+            "plugins.ml_commons.connector_access_control_enabled": True,
+            "plugins.ml_commons.model_access_control_enabled": True,
+            "plugins.ml_commons.trusted_connector_endpoints_regex": [
+                "^https://runtime\\.sagemaker\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
+                "^https://api\\.openai\\.com/.*$",
+                "^https://api\\.cohere\\.ai/.*$"
+            ]
+        }
 
-    data = {
-        "plugins.ml_commons.allow_registering_model_via_url": True,
-        "plugins.ml_commons.only_run_on_ml_node": False,
-        "plugins.ml_commons.connector_access_control_enabled": True,
-        "plugins.ml_commons.model_access_control_enabled": True,
-        "plugins.ml_commons.trusted_connector_endpoints_regex": [
-            "^https://runtime\\.sagemaker\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
-            "^https://api\\.openai\\.com/.*$",
-            "^https://api\\.cohere\\.ai/.*$"
-        ]
-    }
-
-    if 'persistent' in current_settings and current_settings['persistent'] == data:
+    if 'persistent' in current_settings and current_settings['persistent'] == cluster_setting:
         print("Cluster settings are already initialized!")
         return
 
-    response = client.cluster.put_settings(body={"persistent": data})
+    response = client.cluster.put_settings(body={"persistent": cluster_setting})
 
     # Check if request was successful
     if response and 'acknowledged' in response and response['acknowledged']:
@@ -51,7 +51,7 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         raise Exception("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: MLClient, template_name = "nlp-template") -> None:
+def init_index_template(client: MLClient, template_name = "nlp-template", template_data=None) -> None:
 
   """
   Args:
@@ -60,35 +60,36 @@ def init_index_template(client: MLClient, template_name = "nlp-template") -> Non
     returns None if template was created or is exists else raises Exception
   """
   if not client._client.indices.exists_template(name=template_name):
-    template = {
-    "index_patterns": [
-      "cohere*"
-    ],
-    "template": {
-      "settings": {
-        "number_of_shards": 1,
-        "number_of_replicas": 2,
-        "codec": "zstd_no_dict"
-        },
-      "mappings": {
-        "properties": {
-          "data": {
-            "index": False
+    if template_data is None:
+        template_data = {
+        "index_patterns": [
+        "cohere*"
+        ],
+        "template": {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 2,
+            "codec": "zstd_no_dict"
             },
-          "ancestors": {
-            "index": False
+        "mappings": {
+            "properties": {
+            "data": {
+                "index": False
+                },
+            "ancestors": {
+                "index": False
+                }
             }
-          }
+            }
         }
-      }
-    }
+        }
 
-    response = client._client.indices.put_template(name=template_name, body=template)
+    response = client._client.indices.put_template(name=template_name, body=template_data)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
 
 
-def initialize_model_group(client: MLClient) -> None:
+def initialize_model_group(client: MLClient, model_group_name="Cohere_Group", data=None) -> None:
     """
     Args:
         Client: OpenSearch
@@ -96,17 +97,17 @@ def initialize_model_group(client: MLClient) -> None:
         returns None if model group was created or is exists else raises Exception
     """
     # Later on we can edit this to allow more models. For now, we will stick to Cohere.
-    model_group_name = "Cohere_Group"
 
     response = client.get_model_group_id(model_group_name=model_group_name)
 
     # Check if the Cohere model group already exists
     if response is not None:
-        data = {
-            "name": model_group_name,
-            "description": "Public Cohere Model Group",
-            "access_mode": "public"
-        }
+        if data is None:
+            data = {
+                "name": model_group_name,
+                "description": "Public Cohere Model Group",
+                "access_mode": "public"
+            }
 
         response = client.register_model_group(body=data)  # Adjust based on the actual method name and structure
 
@@ -119,7 +120,7 @@ def initialize_model_group(client: MLClient) -> None:
 
 
 
-def initialize_connector(client: MLClient) -> None:
+def initialize_connector(client: MLClient, connector_name="Cohere Connector", connector_data=None) -> None:
     """
     Args:
         Client: OpenSearch
@@ -127,32 +128,33 @@ def initialize_connector(client: MLClient) -> None:
         returns None if connector was created or is exists else raises Exception
     """
     # Once again, only allowing for the Cohere Connector. We can change this later on.
-    connector_data = {
-        "name": "Cohere Connector",
-        "description": "External connector for connections into Cohere",
-        "version": "1.0",
-        "protocol": "http",
-        "credential": {
-            "cohere_key": COHERE_KEY
-        },
-        "parameters": {
-            "model": "embed-english-v2.0",
-            "truncate": "END"
-        },
-        "actions": [{
-            "action_type": "predict",
-            "method": "POST",
-            "url": "https://api.cohere.ai/v1/embed",
-            "headers": {
-                "Authorization": "Bearer ${credential.cohere_key}"
+    if connector_data is None:
+        connector_data = {
+            "name": "Cohere Connector",
+            "description": "External connector for connections into Cohere",
+            "version": "1.0",
+            "protocol": "http",
+            "credential": {
+                "cohere_key": COHERE_KEY
             },
-            "request_body": "{ \"texts\": ${parameters.prompt}, \"truncate\": \"${parameters.truncate}\", \"model\": \"${parameters.model}\" }",
-            "pre_process_function": "connector.pre_process.cohere.embedding",
-            "post_process_function": "connector.post_process.cohere.embedding"
-        }]
-    }
+            "parameters": {
+                "model": "embed-english-v2.0",
+                "truncate": "END"
+            },
+            "actions": [{
+                "action_type": "predict",
+                "method": "POST",
+                "url": "https://api.cohere.ai/v1/embed",
+                "headers": {
+                    "Authorization": "Bearer ${credential.cohere_key}"
+                },
+                "request_body": "{ \"texts\": ${parameters.prompt}, \"truncate\": \"${parameters.truncate}\", \"model\": \"${parameters.model}\" }",
+                "pre_process_function": "connector.pre_process.cohere.embedding",
+                "post_process_function": "connector.post_process.cohere.embedding"
+            }]
+        }
 
-    connector_id = client.get_connector_id(connector_name="Cohere Connector")
+    connector_id = client.get_connector_id(connector_name)
     if connector_id is not None:
         response = client.create_connector(connector_data) #this needs to be fixed
 
@@ -165,7 +167,7 @@ def initialize_connector(client: MLClient) -> None:
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
-def initialize_model(client: MLClient) -> None:
+def initialize_model(client: MLClient, model_data=None) -> None:
     """
     Args:
         Client: OpenSearch
@@ -173,13 +175,14 @@ def initialize_model(client: MLClient) -> None:
         returns None if model was created or is exists else raises Exception
     """
     # Define the model data. For now, placeholders are used for model_group_id and connector_id.
-    model_data = {
-        "name": "embed-english-v2.0",
-        "function_name": "remote",
-        "description": "test model",
-        "model_group_id": MODEL_STATE["model_group_id"],
-        "connector_id": MODEL_STATE["connector_id"]
-    }
+    if model_data is None:
+        model_data = {
+            "name": "embed-english-v2.0",
+            "function_name": "remote",
+            "description": "test model",
+            "model_group_id": MODEL_STATE["model_group_id"],
+            "connector_id": MODEL_STATE["connector_id"]
+        }
 
     # Check if the model already exists
     existing_models = client.search_model({
@@ -204,7 +207,7 @@ def initialize_model(client: MLClient) -> None:
 
 
 
-def initialize_ingestion_pipeline(client: MLClient):
+def initialize_ingestion_pipeline(client: MLClient, pipeline="cohere-ingest-pipeline", pipeline_data=None):
     """
     Args:
         Client: OpenSearch
@@ -212,30 +215,31 @@ def initialize_ingestion_pipeline(client: MLClient):
         returns None if ingestion pipeline was created or is exists else raises Exception
     """
     # Fetch the model ID somehow based on how we created the model ID earlier ^
-    pipeline_data = {
-        "description": "Cohere Neural Search Pipeline",
-        "processors": [
-            {
-                "text_embedding": {
-                    "model_id": MODEL_STATE["model_id"],
-                    "field_map": {
-                        "content": "content_embedding"
+    if pipeline_data is None:
+        pipeline_data = {
+            "description": "Cohere Neural Search Pipeline",
+            "processors": [
+                {
+                    "text_embedding": {
+                        "model_id": MODEL_STATE["model_id"],
+                        "field_map": {
+                            "content": "content_embedding"
+                        }
                     }
                 }
-            }
-        ]
-    }
+            ]
+        }
 
     # Check if the pipeline already exists
     try:
-        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
+        existing_pipeline = client._client.ingest.get_pipeline(pipeline)
         if existing_pipeline:
             print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
             return
     except Exception as e:
         print(f"An error occurred while checking for any existing pipeline: {e}")
 
-    response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
+    response = client._client.ingest.put_pipeline(pipeline, body=pipeline_data)
 
     if response and 'acknowledged' in response and response['acknowledged']:
         print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
@@ -244,7 +248,7 @@ def initialize_ingestion_pipeline(client: MLClient):
 
 
 
-def initialize_index(client: MLClient) -> None:
+def initialize_index(client: MLClient, index="cohere-index", index_data=None) -> None:
     """
     Args:
         Client: OpenSearch
@@ -252,32 +256,33 @@ def initialize_index(client: MLClient) -> None:
         returns None if index was created or is exists else raises Exception
     """
     # Define the index settings and mappings
-    index_data = {
-        "settings": {
-            "index.knn": True,
-            "default_pipeline": "cohere-ingest-pipeline"
-        },
-        "mappings": {
-            "properties": {
-                "content_embedding": {
-                    "type": "knn_vector",
-                    "dimension": 4096,
-                    "method": {
-                        "name": "hnsw",
-                        "space_type": "cosinesimil",
-                        "engine": "nmslib"
+    if index_data is None:
+        index_data = {
+            "settings": {
+                "index.knn": True,
+                "default_pipeline": "cohere-ingest-pipeline"
+            },
+            "mappings": {
+                "properties": {
+                    "content_embedding": {
+                        "type": "knn_vector",
+                        "dimension": 4096,
+                        "method": {
+                            "name": "hnsw",
+                            "space_type": "cosinesimil",
+                            "engine": "nmslib"
+                        }
+                    },
+                    "content": {
+                        "type": "text"
                     }
-                },
-                "content": {
-                    "type": "text"
                 }
             }
         }
-    }
 
     # Check if the index already exists
     try:
-        index_exists = client._client.indices.exists(index="cohere-index")
+        index_exists = client._client.indices.exists(index)
         if index_exists:
             print("Index 'cohere-index' already exists. Skipping initialization.")
             return
@@ -285,7 +290,7 @@ def initialize_index(client: MLClient) -> None:
         print(f"An error occurred while checking for the index: {e}")
 
     # Create the index
-    response = client._client.indices.create(index="cohere-index", body=index_data)
+    response = client._client.indices.create(index, body=index_data)
 
     # Check if the request was successful
     if response and 'acknowledged' in response and response['acknowledged']:
