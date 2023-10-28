@@ -1,5 +1,5 @@
 import sys
-from util import opensearch_connection_builder
+from util import opensearch_connection_builder, opensearch_compare_dictionaries
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder, MLClient
 from opensearchpy import OpenSearch
@@ -14,7 +14,6 @@ MODEL_STATE = {
     "connector_id": "",
     "model_id": ""
 }
-
 
 
 def initialize_cluster_settings(client: OpenSearch) -> None:
@@ -38,8 +37,8 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         ]
     }
 
-    if 'persistent' in current_settings and current_settings['persistent'] == data:
-        print("Cluster settings are already initialized!")
+    if 'persistent' in current_settings and opensearch_compare_dictionaries(data, current_settings['persistent']):
+        print ("Cluster settings are already initialized!")
         return
 
     response = client.cluster.put_settings(body={"persistent": data})
@@ -101,14 +100,14 @@ def initialize_model_group(client: MLClient) -> None:
     response = client.get_model_group_id(model_group_name=model_group_name)
 
     # Check if the Cohere model group already exists
-    if response is not None:
+    if response is None:
         data = {
             "name": model_group_name,
             "description": "Public Cohere Model Group",
             "access_mode": "public"
         }
 
-        response = client.register_model_group(body=data)  # Adjust based on the actual method name and structure
+        response = client.register_model_group(body=data)
 
         if isinstance(response, str):
             print("Model group initialized successfully!")
@@ -153,10 +152,10 @@ def initialize_connector(client: MLClient) -> None:
     }
 
     connector_id = client.get_connector_id(connector_name="Cohere Connector")
-    if connector_id is not None:
+    if connector_id.equals("") or connector_id is None:
         response = client.create_connector(connector_data) #this needs to be fixed
-
-        if isinstance(response, str):
+        connector_id = client.get_connector_id(connector_name="Cohere Connector")
+        if not connector_id.equals(""):
             print("Connector 'Cohere Connector' initialized successfully!")
             MODEL_STATE["connector_id"] = response
         else:
@@ -227,13 +226,10 @@ def initialize_ingestion_pipeline(client: MLClient):
     }
 
     # Check if the pipeline already exists
-    try:
-        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
-        if existing_pipeline:
-            print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
-            return
-    except Exception as e:
-        print(f"An error occurred while checking for any existing pipeline: {e}")
+    existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
+    if not existing_pipeline.equals("") or existing_pipeline is not None:
+        print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
+        return
 
     response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
 
@@ -276,13 +272,10 @@ def initialize_index(client: MLClient) -> None:
     }
 
     # Check if the index already exists
-    try:
-        index_exists = client._client.indices.exists(index="cohere-index")
-        if index_exists:
-            print("Index 'cohere-index' already exists. Skipping initialization.")
-            return
-    except Exception as e:
-        print(f"An error occurred while checking for the index: {e}")
+    index_exists = client._client.indices.exists(index="cohere-index")
+    if not index_exists.equals("") or index_exists is not None:
+        print("Index 'cohere-index' already exists. Skipping initialization.")
+        return
 
     # Create the index
     response = client._client.indices.create(index="cohere-index", body=index_data)
