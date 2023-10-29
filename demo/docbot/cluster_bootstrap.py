@@ -307,7 +307,7 @@ def ml_cleanup(client: MLClient) -> None:
       print(undeploy_model_response)
   else:
       raise Exception("Failed to undeploy model.")
-  
+
   # Delete model
   delete_model_response = client.delete_model(MODEL_STATE["model_id"])
   if delete_model_response:
@@ -342,7 +342,7 @@ def ml_cleanup(client: MLClient) -> None:
 
   # Clear MODEL_STATE
   for state in MODEL_STATE:
-      MODEL_STATE[state] = ""
+      MODEL_STATE[state] = None
 
 def main():
     try:
