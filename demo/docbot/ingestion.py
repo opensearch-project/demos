@@ -65,5 +65,5 @@ if __name__=="__main__":
   try:
     data_list = read_files_from_data()
     ingest_to_opensearch(data_list)
-  except:
-    print("An exception occured without finishing ingestion.")
+  except Exception as e:
+    print(f"An exception occured without finishing ingestion: {e}")

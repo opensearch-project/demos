@@ -6,7 +6,7 @@ from docbot.util import opensearch_connection_builder, shorten_json_file_same_in
 
 def test_opensearch_connection():
   connection = opensearch_connection_builder()
-  health = connection._client.cat.health()
+  health = connection.cat.health()
   assert isinstance(health, str)
 
 def test_shorten_json_file_same_index():
