@@ -22,5 +22,5 @@ def test_read_files_from_data():
         read_files_from_data(fake_folder)
     os.rmdir(fake_folder)
 
-# def test_ingest_to_opensearch():
-#     pass
+def test_ingest_to_opensearch():
+    pass

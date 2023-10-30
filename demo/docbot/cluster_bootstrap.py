@@ -1,5 +1,5 @@
-import sys
-from util import opensearch_connection_builder
+import requests
+import os, json, sys
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder, MLClient
 from opensearchpy import OpenSearch
@@ -88,6 +88,7 @@ def init_index_template(client: MLClient, template_name = "nlp-template") -> Non
     response = client._client.indices.put_template(name=template_name, body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
+
 
 
 def initialize_model_group(client: MLClient) -> None:
@@ -308,4 +309,4 @@ def main():
     except Exception as e:
         print(f"An error occurred while initializing cluster bootstrap: {e}")
 
-main()
+# main()
