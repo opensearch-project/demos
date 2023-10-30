@@ -208,6 +208,34 @@ def opensearch_connection_builder(ml_client=False) -> MLCommonClient | OpenSearc
 
   return client
 
+
+# Handles the case for when dictionary values are lists
+def opensearch_compare_dictionaries(value1, value2):
+    if type(value1) != type(value2):
+        return False
+    
+    if isinstance(value1, (int, float, str, bool)):
+        return value1 is value2 if isinstance(value1, bool) else value1 == value2
+    
+    if isinstance(value1, list):
+        if len(value1) != len(value2):
+            return False
+        for item1, item2 in zip(value1, value2):
+            if not opensearch_compare_dictionaries(item1, item2):
+                return False
+        return True
+    
+    if isinstance(value1, dict):
+        if set(value1.keys()) != set(value2.keys()):
+            return False
+        for key in value1:
+            if not opensearch_compare_dictionaries(value1[key], value2[key]):
+                return False
+        return True
+    
+    return False
+
+
 def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
   """
   Args:
