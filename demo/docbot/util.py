@@ -2,6 +2,7 @@ import dotenv
 from os import getenv
 from opensearchpy import OpenSearch
 from opensearch_py_ml.ml_commons import MLCommonClient
+from copy import deepcopy
 
 
 dotenv.load_dotenv()
@@ -233,3 +234,39 @@ def opensearch_compare_dictionaries(value1, value2):
         return True
     
     return False
+
+
+def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
+  """
+  Args:
+    json_file: a json index with OpenSearch document to be ingested
+    num_words: content length of each sub-document
+    overlap: The percentage amount of overlap in breaking the documents
+  Returns:
+    A list of dict with same metadata but content is a chunk of sub-document if successful, raise exception if failed
+  """
+  if not isinstance(json_file, dict) or 'content' not in json_file:
+    raise ValueError("Inappropriate Argument json_file must be a valid dict of OpenSearch json index")
+
+  if num_words <= 0:
+    raise ValueError("Inappropriate Argument: num_words must be positive")
+
+  if overlap <= 0 or overlap >= 1:
+    raise ValueError("Inappropriate Argument: overlap must be within 0 and 1")
+
+  sentence_to_split = json_file['content'].split()
+  temp = None
+  result = []
+
+  while len(sentence_to_split) > (num_words):
+    overlapped_bound = int(num_words-(num_words*overlap))
+    temp = deepcopy(json_file)
+    temp['content'] = " ".join(sentence_to_split[:num_words])
+    result.append(temp)
+    sentence_to_split = sentence_to_split[overlapped_bound:]
+
+  temp = deepcopy(json_file)
+  temp['content'] = " ".join(sentence_to_split)
+  result.append(temp)
+
+  return result

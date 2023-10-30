@@ -1,7 +1,7 @@
-import sys
-from util import opensearch_connection_builder, opensearch_compare_dictionaries
+import requests
+import os, json, sys
 sys.path.append('./demo/')
-from docbot.util import opensearch_connection_builder, MLClient
+from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient
 from opensearchpy import OpenSearch
 
 import dotenv
@@ -30,6 +30,8 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         "plugins.ml_commons.only_run_on_ml_node": False,
         "plugins.ml_commons.connector_access_control_enabled": True,
         "plugins.ml_commons.model_access_control_enabled": True,
+        "plugins.ml_commons.memory_feature_enabled": True,
+        "plugins.ml_commons.rag_pipeline_feature_enabled": True,
         "plugins.ml_commons.trusted_connector_endpoints_regex": [
             "^https://runtime\\.sagemaker\\..*[a-z0-9-]\\.amazonaws\\.com/.*$",
             "^https://api\\.openai\\.com/.*$",
@@ -85,6 +87,7 @@ def init_index_template(client: MLClient, template_name = "nlp-template") -> Non
     response = client._client.indices.put_template(name=template_name, body=template)
     if not response["acknowledged"]:
       raise Exception("Unable to create index template.")
+
 
 
 def initialize_model_group(client: MLClient) -> None:
@@ -299,4 +302,4 @@ def main():
     except Exception as e:
         print(f"An error occurred while initializing cluster bootstrap: {e}")
 
-main()
+# main()
