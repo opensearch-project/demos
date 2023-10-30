@@ -302,7 +302,8 @@ def ml_cleanup(client: MLClient) -> None:
     """
   # Undeploy model
   undeploy_model_response = client.undeploy_model(MODEL_STATE['model_id'])
-  if undeploy_model_response:
+  stats = dict(list(undeploy_model_response.values())[0])
+  if stats[MODEL_STATE['model_id']] == 'undeployed':
       print('\nUndeploying model:')
       print(undeploy_model_response)
   else:
@@ -310,7 +311,7 @@ def ml_cleanup(client: MLClient) -> None:
 
   # Delete model
   delete_model_response = client.delete_model(MODEL_STATE["model_id"])
-  if delete_model_response:
+  if delete_model_response and delete_model_response['result'] == 'deleted' and delete_connector_response['_shards']['failed'] == 0:
       print('\nDeleting model:')
       print(delete_model_response)
   else:
@@ -318,7 +319,7 @@ def ml_cleanup(client: MLClient) -> None:
 
   # Delete model connector
   delete_connector_response = client.delete_connector(MODEL_STATE['connector_id'])
-  if delete_connector_response:
+  if delete_connector_response and delete_connector_response['result'] == 'deleted' and delete_connector_response['_shards']['failed'] == 0:
       print('\nDeleting connector:')
       print(delete_connector_response)
   else:
@@ -326,7 +327,7 @@ def ml_cleanup(client: MLClient) -> None:
 
   # Delete ingest pipeline
   delete_pipeline_response = client._client.ingest.delete_pipeline(id='cohere-ingest-pipeline')
-  if delete_pipeline_response:
+  if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
       print('\nDeleting pipeline:')
       print(delete_pipeline_response)
   else:
@@ -334,7 +335,7 @@ def ml_cleanup(client: MLClient) -> None:
 
   # Delete index
   delete_index_response = client._client.indices.delete(index='cohere-index')
-  if delete_index_response:
+  if delete_index_response and 'acknowledged' in delete_index_response and delete_index_response['acknowledged']:
       print('\nDeleting index:')
       print(delete_index_response)
   else:
