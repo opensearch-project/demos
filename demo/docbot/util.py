@@ -189,7 +189,7 @@ class MLClient(MLCommonClient):
 
 ##### END MONKEYPATCH #####
 
-def opensearch_connection_builder(ml_client=False, use_ssl=True):
+def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClient | OpenSearch:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
