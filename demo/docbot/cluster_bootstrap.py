@@ -229,17 +229,19 @@ def initialize_ingestion_pipeline(client: MLClient):
     }
 
     # Check if the pipeline already exists
-    existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
-    if not existing_pipeline.equals("") or existing_pipeline is not None:
-        print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
-        return
+    try:
+        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
+        if not existing_pipeline.equals("") or existing_pipeline is not None:
+            print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
+            return
+    except:
+        response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
 
-    response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
-
-    if response and 'acknowledged' in response and response['acknowledged']:
-        print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
-    else:
-        raise Exception("Failed to initialize pipeline.")
+        if response and 'acknowledged' in response and response['acknowledged']:
+            print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
+        else:
+            raise Exception("Failed to initialize pipeline.")
+        pass
 
 
 
@@ -292,7 +294,10 @@ def initialize_index(client: MLClient) -> None:
 
 def main():
     try:
-        client = opensearch_connection_builder(ml_client=True)
+        use_ssl = True
+        if "--no-ssl" in sys.argv:
+            use_ssl = False
+        client = opensearch_connection_builder(ml_client=True, use_ssl=use_ssl)
         initialize_cluster_settings(client)
         initialize_model_group(client)
         initialize_connector(client)
