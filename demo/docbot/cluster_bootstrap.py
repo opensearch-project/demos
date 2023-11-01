@@ -155,15 +155,16 @@ def initialize_connector(client: MLClient) -> None:
     }
 
     connector_id = client.get_connector_id(connector_name="Cohere Connector")
-    if connector_id.equals("") or connector_id is None:
+    if connector_id is None:
         response = client.create_connector(connector_data) #this needs to be fixed
         connector_id = client.get_connector_id(connector_name="Cohere Connector")
-        if not connector_id.equals(""):
+        if not connector_id == "":
             print("Connector 'Cohere Connector' initialized successfully!")
             MODEL_STATE["connector_id"] = response
         else:
             raise Exception("Failed to initialize connector.")
     else:
+        MODEL_STATE["connector_id"] = response
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
@@ -229,17 +230,17 @@ def initialize_ingestion_pipeline(client: MLClient):
     }
 
     # Check if the pipeline already exists
-    existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
-    if not existing_pipeline.equals("") or existing_pipeline is not None:
+    try:
+        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
         print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
         return
-
-    response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
-
-    if response and 'acknowledged' in response and response['acknowledged']:
-        print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
-    else:
-        raise Exception("Failed to initialize pipeline.")
+    except:
+        response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
+        if response and 'acknowledged' in response and response['acknowledged']:
+            print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
+        else:
+            raise Exception("Failed to initialize pipeline.")
+        pass
 
 
 
@@ -276,7 +277,7 @@ def initialize_index(client: MLClient) -> None:
 
     # Check if the index already exists
     index_exists = client._client.indices.exists(index="cohere-index")
-    if not index_exists.equals("") or index_exists is not None:
+    if index_exists is not None:
         print("Index 'cohere-index' already exists. Skipping initialization.")
         return
 
