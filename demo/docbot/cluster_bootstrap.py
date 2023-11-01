@@ -344,7 +344,10 @@ def ml_cleanup(client: MLClient) -> None:
 
 def main():
     try:
-        client = opensearch_connection_builder(ml_client=True)
+        use_ssl = True
+        if "--no-ssl" in sys.argv:
+            use_ssl = False
+        client = opensearch_connection_builder(ml_client=True, use_ssl=use_ssl)
         initialize_cluster_settings(client)
         initialize_model_group(client)
         initialize_connector(client)

@@ -5,12 +5,13 @@ from opensearch_py_ml.ml_commons import MLCommonClient
 from copy import deepcopy
 
 
-dotenv.load_dotenv()
-ADMIN_PW = getenv('ADMIN_PW')
-ADMIN_UN = getenv('ADMIN_UN')
-HOSTS = getenv('HOSTS')
-DEVELOPMENT= getenv('DEVELOPMENT')
+if (not dotenv.load_dotenv()):
+  print("No .env file found. Loading defaults...")
 
+ADMIN_PW = 'admin' if getenv('ADMIN_PW') == None else getenv('ADMIN_PW')
+ADMIN_UN = 'admin' if getenv('ADMIN_UN') == None else getenv('ADMIN_UN')
+HOSTS = 'localhost:9200' if getenv('HOSTS') == None else getenv('HOSTS')
+DEVELOPMENT= True if getenv('DEVELOPMENT') == None else getenv('DEVELOPMENT')
 
 ##### Monkey patching 🤪 #####
 
@@ -188,11 +189,11 @@ class MLClient(MLCommonClient):
 
 ##### END MONKEYPATCH #####
 
-def opensearch_connection_builder(ml_client=False) -> MLCommonClient | OpenSearch:
+def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClient | OpenSearch:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
-    "use_ssl": True,
+    "use_ssl": use_ssl,
     "verify_certs": True
   }
 
@@ -213,10 +214,10 @@ def opensearch_connection_builder(ml_client=False) -> MLCommonClient | OpenSearc
 def opensearch_compare_dictionaries(value1, value2):
     if type(value1) != type(value2):
         return False
-    
+
     if isinstance(value1, (int, float, str, bool)):
         return value1 is value2 if isinstance(value1, bool) else value1 == value2
-    
+
     if isinstance(value1, list):
         if len(value1) != len(value2):
             return False
@@ -224,7 +225,7 @@ def opensearch_compare_dictionaries(value1, value2):
             if not opensearch_compare_dictionaries(item1, item2):
                 return False
         return True
-    
+
     if isinstance(value1, dict):
         if set(value1.keys()) != set(value2.keys()):
             return False
@@ -232,7 +233,7 @@ def opensearch_compare_dictionaries(value1, value2):
             if not opensearch_compare_dictionaries(value1[key], value2[key]):
                 return False
         return True
-    
+
     return False
 
 
