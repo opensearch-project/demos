@@ -158,17 +158,16 @@ def initialize_connector(client: MLClient) -> None:
     }
 
     connector_id = client.get_connector_id(connector_name="Cohere Connector")
-    if connector_id.equals("") or connector_id is None:
-        response = client.create_connector(
-            connector_data)  # this needs to be fixed
-        connector_id = client.get_connector_id(
-            connector_name="Cohere Connector")
-        if not connector_id.equals(""):
+    if connector_id is None:
+        response = client.create_connector(connector_data) #this needs to be fixed
+        connector_id = client.get_connector_id(connector_name="Cohere Connector")
+        if not connector_id == "":
             print("Connector 'Cohere Connector' initialized successfully!")
             MODEL_STATE["connector_id"] = response
         else:
             raise Exception("Failed to initialize connector.")
     else:
+        MODEL_STATE["connector_id"] = response
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
@@ -256,16 +255,11 @@ def initialize_ingestion_pipeline(client: MLClient):
 
     # Check if the pipeline already exists
     try:
-        existing_pipeline = client._client.ingest.get_pipeline(
-            id="cohere-ingest-pipeline")
-        if not existing_pipeline.equals("") or existing_pipeline is not None:
-            print(
-                "Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
-            return
+        existing_pipeline = client._client.ingest.get_pipeline(id="cohere-ingest-pipeline")
+        print("Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
+        return
     except:
-        response = client._client.ingest.put_pipeline(
-            id="cohere-ingest-pipeline", body=pipeline_data)
-
+        response = client._client.ingest.put_pipeline(id="cohere-ingest-pipeline", body=pipeline_data)
         if response and 'acknowledged' in response and response['acknowledged']:
             print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
         else:
@@ -306,7 +300,7 @@ def initialize_index(client: MLClient) -> None:
 
     # Check if the index already exists
     index_exists = client._client.indices.exists(index="cohere-index")
-    if not index_exists.equals("") or index_exists is not None:
+    if index_exists is not None:
         print("Index 'cohere-index' already exists. Skipping initialization.")
         return
 
@@ -320,6 +314,57 @@ def initialize_index(client: MLClient) -> None:
     else:
         raise Exception("Failed to create index.")
 
+def ml_cleanup(client: MLClient) -> None:
+  """
+    Args:
+        client: MLCLient
+    Returns:
+        returns None
+    """
+  # Undeploy model
+  undeploy_model_response = client.undeploy_model(MODEL_STATE['model_id'])
+  stats = dict(list(undeploy_model_response.values())[0])
+  if stats[MODEL_STATE['model_id']] == 'undeployed':
+      print('\nUndeploying model:')
+      print(undeploy_model_response)
+  else:
+      raise Exception("Failed to undeploy model.")
+
+  # Delete model
+  delete_model_response = client.delete_model(MODEL_STATE["model_id"])
+  if delete_model_response and delete_model_response['result'] == 'deleted' and delete_connector_response['_shards']['failed'] == 0:
+      print('\nDeleting model:')
+      print(delete_model_response)
+  else:
+      raise Exception("Failed to delete model.")
+
+  # Delete model connector
+  delete_connector_response = client.delete_connector(MODEL_STATE['connector_id'])
+  if delete_connector_response and delete_connector_response['result'] == 'deleted' and delete_connector_response['_shards']['failed'] == 0:
+      print('\nDeleting connector:')
+      print(delete_connector_response)
+  else:
+      raise Exception("Failed to delete connector.")
+
+  # Delete ingest pipeline
+  delete_pipeline_response = client._client.ingest.delete_pipeline(id='cohere-ingest-pipeline')
+  if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
+      print('\nDeleting pipeline:')
+      print(delete_pipeline_response)
+  else:
+      raise Exception("Failed to delete ingest pipeline.")
+
+  # Delete index
+  delete_index_response = client._client.indices.delete(index='cohere-index')
+  if delete_index_response and 'acknowledged' in delete_index_response and delete_index_response['acknowledged']:
+      print('\nDeleting index:')
+      print(delete_index_response)
+  else:
+      raise Exception("Failed to delete index.")
+
+  # Clear MODEL_STATE
+  for state in MODEL_STATE:
+      MODEL_STATE[state] = None
 
 def main():
     try:

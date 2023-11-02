@@ -4,3 +4,6 @@
 
 # Finally we will string the whole pipeline together with Neural Search
 # or Conversational search
+
+def generate_response(conversation_id, message):
+  pass
