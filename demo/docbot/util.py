@@ -112,7 +112,7 @@ class MLClient(MLCommonClient):
     }
 
     if connector_name is not None:
-       query["query"]["match"].update({"name": connector_id})
+       query["query"]["match"].update({"name": connector_name})
     else: raise Exception("Model group name and id cannot both be empty")
 
     output = self._client.transport.perform_request(
