@@ -40,7 +40,22 @@ class DocBot():
         hits = data.get('hits', {}).get('hits', [])
         id = hits[0]['id']
       else:
-        id = len(self.conversations) + 1
+        max_id_query = {
+          "size": 0,
+          "aggs": {
+            "max_id": {
+              "max": {
+                  "field": "id"
+                }
+              }
+            }
+          }
+        max_id_response = self.OpenSearch.search(index="your_index_name", body=max_id_query)
+        if max_id_response["aggregations"]["max_id"]["value"] != None:
+          max_id = max_id_response["aggregations"]["max_id"]["value"]
+        else:
+          max_id = 0
+        id = max_id + 1
         self.conversations[conversation_name] = id
 
     #Then return the relevant ID
