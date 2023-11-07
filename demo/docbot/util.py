@@ -187,7 +187,7 @@ class MLClient(MLCommonClient):
           method="DELETE",
           url=API_URL,
       )
-  
+
   def get_search_pipeline(self, id=None) -> dict:
       """
       Returns search pipeline if it exists
@@ -199,7 +199,7 @@ class MLClient(MLCommonClient):
       """
       return self._client.transport.perform_request(
          method="GET",
-         url=_make_path("_search", "pipeline", id),
+         url=_make_path("_search", "pipeline", id)
       )
 
   def put_search_pipeline(self, id: str, body : dict) -> dict:
@@ -216,7 +216,7 @@ class MLClient(MLCommonClient):
       for param in (id, body):
             if param in SKIP_IN_PATH:
                 raise ValueError("Empty value passed for a required argument.")
-      
+
       return self._client.transport.perform_request(
          method="PUT",
          url=_make_path("_search", "pipeline", id),
