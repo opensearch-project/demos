@@ -242,7 +242,35 @@ def initialize_ingestion_pipeline(client: MLClient):
             raise Exception("Failed to initialize pipeline.")
         pass
 
-
+def initialize_rag_search_pipeline(client: MLClient, id: str = "rag-search-pipeline") -> None:
+    """
+    Args:
+        Client: MLClient
+    Returns:
+        returns None if pipeline was created or it exists else raises Exception
+    """
+    body = {
+      "response_processors": [
+        {
+          "retrieval_augmented_generation": {
+            "description": "RAG search pipeline to be used with Cohere index",
+            "model_id": MODEL_STATE["LLM_model_id"],
+            "context_field_list": ["text"]
+          }
+        }
+      ]
+    }
+    # Check if pipeline exists, else create it
+    try:
+        pipeline = client.get_search_pipeline(id=id)
+        print(f"Pipeline {id} already exisits. Skipping initialization")
+        return
+    except:
+        response = client.put_search_pipeline(id=id, body=body)
+        if response and "acknowledged" in response and response["acknowledged"]:
+            print(f"Pipeline {id} initialized succesfully.")
+        else:
+            raise Exception("Failed to initialize pipeline.")
 
 def initialize_index(client: MLClient) -> None:
     """
@@ -255,7 +283,8 @@ def initialize_index(client: MLClient) -> None:
     index_data = {
         "settings": {
             "index.knn": True,
-            "default_pipeline": "cohere-ingest-pipeline"
+            "default_pipeline": "cohere-ingest-pipeline",
+            "default.search.default_pipeline": "rag-search-pipeline"
         },
         "mappings": {
             "properties": {
@@ -353,6 +382,7 @@ def main():
         initialize_connector(client)
         initialize_model(client)
         initialize_ingestion_pipeline(client)
+        initialize_rag_search_pipeline(client)
         initialize_index(client)
     except Exception as e:
         print(f"An error occurred while initializing cluster bootstrap: {e}")
