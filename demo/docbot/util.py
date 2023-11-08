@@ -222,6 +222,20 @@ class MLClient(MLCommonClient):
          url=_make_path("_search", "pipeline", id),
          body=body
       )
+  
+  def delete_search_pipeline(self, id: str) -> None:
+      """
+      Deletes search pipeline
+
+      :param id: Pipeline id
+      :type id: string
+      :return: returns json object if request was successful
+      :rtype: object
+      """
+      return self._client.transport.perform_request(
+         method="DELETE",
+         url=_make_path("search", "pipeline", id)
+      )
 
 ##### END MONKEYPATCH #####
 
