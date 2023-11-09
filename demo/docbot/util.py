@@ -202,7 +202,7 @@ class MLClient(MLCommonClient):
          url=_make_path("_search", "pipeline", id)
       )
 
-  def put_search_pipeline(self, id: str, body : dict) -> dict:
+  def put_search_pipeline(self, id: str, body: dict) -> dict:
       """
       Creates or updates search pipeline
 
@@ -222,7 +222,7 @@ class MLClient(MLCommonClient):
          url=_make_path("_search", "pipeline", id),
          body=body
       )
-  
+
   def delete_search_pipeline(self, id: str) -> None:
       """
       Deletes search pipeline
@@ -234,7 +234,7 @@ class MLClient(MLCommonClient):
       """
       return self._client.transport.perform_request(
          method="DELETE",
-         url=_make_path("search", "pipeline", id)
+         url=_make_path("_search", "pipeline", id)
       )
 
 ##### END MONKEYPATCH #####
