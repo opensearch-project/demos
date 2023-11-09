@@ -255,7 +255,7 @@ def initialize_rag_search_pipeline(client: MLClient, id: str = "rag-search-pipel
           "retrieval_augmented_generation": {
             "description": "RAG search pipeline to be used with Cohere index",
             "model_id": MODEL_STATE["LLM_model_id"],
-            "context_field_list": ["text"]
+            "context_field_list": ["content"]
           }
         }
       ]
