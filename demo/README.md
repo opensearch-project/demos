@@ -1,6 +1,6 @@
 # OpenSearch + OpenSearch Dashboards with OpenLDAP authentication backend
 
-This repo provides an example cluster using OpenLDAP as an authentication backend.
+This demo provides an example cluster using OpenLDAP as an authentication backend.
 
 ## Services
 
@@ -11,9 +11,9 @@ This repo provides an example cluster using OpenLDAP as an authentication backen
 
 ## Start the cluster
 
-Clone this repository and navigate to the cloned repo using a terminal.
+Checkout this branch and navigate to the `demo/` folder in a terminal.
 
-In the root directory of this project run `docker-compose down && docker-compose up` to start a cluster.
+Run `docker-compose down && docker-compose up` to start a cluster.
 
 ### Making changes in LDAP
 
@@ -26,7 +26,7 @@ You can make changes in the directory as the admin
 
 ## Default accounts
 
-This repo comes with some default accounts listed in `directory.ldif`
+This demo comes with some default accounts listed in `directory.ldif`
 
 
 When logging into OpenSearch Dashboards you can use the common name (cn), but you need to use the distinguished name (dn) when logging into PhpLDAPAdmin
