@@ -17,16 +17,16 @@ class ClusterBootstrap:
         self.connector_id = ""
         self.embedding_model = ""
         self.language_model = ""
-        self.client = opensearch_connection_builder(
+        self._client = opensearch_connection_builder(
             ml_client=True, use_ssl=use_ssl)
 
-        self.initialize_cluster_settings()
-        self.initialize_model_group()
-        self.initialize_connector()
-        self.initialize_model("embed-english-v2.0", "Embedding Model")
-        self.initialize_model("command-nightly", "Cohere Command Model")
-        self.initialize_ingestion_pipeline()
-        self.initialize_index()
+        self._initialize_cluster_settings()
+        self._initialize_model_group()
+        self._initialize_connector()
+        self._initialize_model("embed-english-v2.0", "Embedding Model")
+        self._initialize_model("command-nightly", "Cohere Command Model")
+        self._initialize_ingestion_pipeline()
+        self._initialize_index()
 
     def initialize_cluster_settings(self):
         current_settings = self.client._client.cluster.get_settings()
