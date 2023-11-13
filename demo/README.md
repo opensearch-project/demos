@@ -11,7 +11,7 @@ This demo provides an example cluster using OpenLDAP as an authentication backen
 
 ## Start the cluster
 
-Checkout this branch and navigate to the `demo/` folder in a terminal.
+Checkout this branch (`ldap-example`) and navigate to the `demo/` folder in a terminal.
 
 Run `docker-compose down && docker-compose up` to start a cluster.
 
