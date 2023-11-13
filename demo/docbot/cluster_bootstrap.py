@@ -1,7 +1,7 @@
 from os import getenv
 import dotenv
 from opensearchpy import OpenSearch
-from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient
+from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient, model_exists
 import requests
 import os
 import json
@@ -9,6 +9,7 @@ import sys
 sys.path.append('./demo/')
 
 dotenv.load_dotenv()
+
 
 class ClusterBootstrap:
     def __init__(self, use_ssl=True):
@@ -29,6 +30,12 @@ class ClusterBootstrap:
         self._initialize_index()
 
     def initialize_cluster_settings(self):
+        """
+        Args:
+            Self
+        Returns:
+            returns None if cluster settings was created or is exists else raise Exception
+        """
         current_settings = self.client._client.cluster.get_settings()
 
         data = {
@@ -56,6 +63,12 @@ class ClusterBootstrap:
             raise Exception("Failed to initialize cluster settings.")
 
     def init_index_template(self, template_name="nlp-template"):
+        """
+        Args:
+            Self
+        Returns:
+            returns None if template was created or is exists else raises Exception
+        """
         if not self.client._client.indices.exists_template(name=template_name):
             template = {
                 "index_patterns": [
@@ -86,6 +99,13 @@ class ClusterBootstrap:
                 raise Exception("Unable to create index template.")
 
     def initialize_model_group(self):
+        """
+        Args:
+            Self
+        Returns:
+            returns None if model group was created or is exists else raises Exception
+        """
+
         model_group_name = "Cohere_Group"
         response = self.client.get_model_group_id(
             model_group_name=model_group_name)
@@ -106,6 +126,12 @@ class ClusterBootstrap:
             print(f"Model group '{model_group_name}' already exists.")
 
     def initialize_connector(self):
+        """
+        Args:
+            Self
+        Returns:
+            returns None if connector was created or is exists else raises Exception
+        """
         connector_data = {
             "name": "Cohere Connector",
             "description": "External connector for connections into Cohere",
@@ -147,6 +173,20 @@ class ClusterBootstrap:
             print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
     def initialize_model(self, model_name: str, model_descp: str):
+        """
+        Initialize a model in OpenSearch.
+        (In the model_meta json, the parameters field is only needed when using a model
+        other than text-embed-2 since it defaults to text-embedding-ada-002)
+
+        Args:
+            Self
+            model_name (str): The name of the model to initialize.
+            model_descp (str): The description of the model.
+
+        Returns:
+            None if model is initialized successfully or already initialized else raises Exception
+
+        """
         model_meta = {
             "name": model_name,
             "function_name": "remote",
@@ -155,9 +195,10 @@ class ClusterBootstrap:
             "connector_id": self.connector_id
         }
 
-        if self.model_exists(model_name):
-            print("Model " + model_name +
-                  " already exists. Skipping initialization.")
+        model_id = model_exists(client=self.client, model_name=model_name)
+        if model_id:
+            self.connector_id = model_id
+            print("Model " + model_name + " already exists. Skipping initialization.")
             return
 
         response = self.client.register_connector_model(
@@ -170,19 +211,6 @@ class ClusterBootstrap:
             print("Model " + model_name + " initialized successfully!")
         else:
             raise Exception("Failed to initialize model.")
-
-    def model_exists(self, model_name: str) -> bool:
-        existing_models = self.client.search_model({
-            "query": {
-                "match": {
-                    "name": model_name
-                }
-            }
-        })
-        if existing_models["hits"]["total"]["value"] > 0:
-            self.connector_id = existing_models["hits"]["hits"][0]["_id"]
-            return True
-        return False
 
     def initialize_ingestion_pipeline(self):
         pipeline_data = {
@@ -260,7 +288,8 @@ class ClusterBootstrap:
                 else:
                     raise Exception("Failed to undeploy model.")
 
-                delete_model_response = self.client.delete_model(self.embedding_model)
+                delete_model_response = self.client.delete_model(
+                    self.embedding_model)
                 if delete_model_response and delete_model_response['result'] == 'deleted':
                     print('\nDeleting model:')
                     print(delete_model_response)
@@ -302,6 +331,7 @@ class ClusterBootstrap:
             self.embedding_model = None
             self.language_model = None
             # Ensure that any additional cleanup is also handled here
+
 
 if __name__ == "__main__":
     try:
