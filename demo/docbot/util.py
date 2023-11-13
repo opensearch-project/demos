@@ -112,7 +112,7 @@ class MLClient(MLCommonClient):
     }
 
     if connector_name is not None:
-       query["query"]["match"].update({"name": connector_id})
+       query["query"]["match"].update({"name": connector_name})
     else: raise Exception("Model group name and id cannot both be empty")
 
     output = self._client.transport.perform_request(
@@ -271,3 +271,22 @@ def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
   result.append(temp)
 
   return result
+
+def model_exists(client: MLClient, model_name: str) -> bool:
+    """
+    Args:
+        client (MLClient): The OpenSearch ML client.
+        model_name (str): The name of the model to check.
+    Returns:
+        returns Model ID if model exists else None
+    """
+    existing_models = client.search_model({
+        "query": {
+            "match": {
+                "name": model_name
+            }
+        }
+    })
+    if existing_models["hits"]["total"]["value"] > 0:
+        return existing_models["hits"]["hits"][0]["_id"]
+    return None

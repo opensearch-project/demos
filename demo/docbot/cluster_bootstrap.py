@@ -1,12 +1,12 @@
 from os import getenv
 import dotenv
 from opensearchpy import OpenSearch
-from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient
+import sys
+sys.path.append('./demo/')
+from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient, model_exists
 import requests
 import os
 import json
-import sys
-sys.path.append('./demo/')
 
 
 dotenv.load_dotenv()
@@ -174,6 +174,8 @@ def initialize_connector(client: MLClient) -> None:
 def initialize_model(client: MLClient, model_name: str, model_descp: str) -> None:
     """
     Initialize a model in OpenSearch.
+    (In the model_meta json, the parameters field is only needed when using a model
+    other than text-embed-2 since it defaults to text-embedding-ada-002)
 
     Args:
         client (MLClient): The OpenSearch ML client.
@@ -195,7 +197,9 @@ def initialize_model(client: MLClient, model_name: str, model_descp: str) -> Non
     if model_name == "command-nightly":
         model_meta["parameters"] = {"model": "command-nightly"}
 
-    if model_exists(client, model_name):
+    model_id = model_exists(client, model_name)
+    if model_id:
+        MODEL_STATE["connector_id"] = model_id
         print("Model " + model_name + " already exists. Skipping initialization.")
         return
 
@@ -208,27 +212,6 @@ def initialize_model(client: MLClient, model_name: str, model_descp: str) -> Non
         print("Model " + model_name + " initialized successfully!")
     else:
         raise Exception("Failed to initialize model.")
-
-
-def model_exists(client: MLClient, model_name: str) -> bool:
-    """
-    Args:
-        client (MLClient): The OpenSearch ML client.
-        model_name (str): The name of the model to check.
-    Returns:
-        returns True if the model exists else False
-    """
-    existing_models = client.search_model({
-        "query": {
-            "match": {
-                "name": model_name
-            }
-        }
-    })
-    if existing_models["hits"]["total"]["value"] > 0:
-        MODEL_STATE["connector_id"] = existing_models["hits"]["hits"][0]["_id"]
-        return True
-    return False
 
 
 def initialize_ingestion_pipeline(client: MLClient):
