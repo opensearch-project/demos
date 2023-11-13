@@ -9,6 +9,9 @@ services:
       node.name: opensearch
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
+      - ./config/opensearch-security/config.yml:/usr/share/opensearch/config/opensearch-security/config.yml
+      - ./config/opensearch-security/internal_users.yml:/usr/share/opensearch/config/opensearch-security/internal_users.yml
+      - ./config/opensearch-security/roles_mapping.yml:/usr/share/opensearch/config/opensearch-security/roles_mapping.yml
       - opensearch-data:/usr/share/opensearch/data
     ports:
       - 9200:9200
@@ -25,10 +28,38 @@ services:
       - "5601"
     environment:
       OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
+    volumes:
+      - ./config/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml
     networks:
       - opensearch-net
     depends_on:
       - opensearch
+
+  openldap:
+    image: osixia/openldap
+    container_name: openldap
+    command: --copy-service # seemingly required to load directory.ldif
+    ports:
+      - 389:389
+      - 636:636
+    environment:
+      - LDAP_ADMIN_PASSWORD=changethis
+      - LDAP_READONLY_USER=true
+      - LDAP_READONLY_USER_PASSWORD=changethistoo
+    volumes:
+      - ./ldap_config/directory.ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom/directory.ldif
+    networks:
+      - opensearch-net
+
+  openldap-admin:
+    image: osixia/phpldapadmin
+    container_name: openldap-admin
+    ports:
+      - 6443:443
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+    networks:
+      - opensearch-net
 
 volumes:
   opensearch-data:
