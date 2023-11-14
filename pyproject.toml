@@ -1,4 +1,0 @@
-[tool.black]
-line-length = 88
-target-version = ["py38", "py39", "py310", "py311"]
-v = true    # emit messages to stderr about files that were not changed or were ignored due to exclusion patterns.
