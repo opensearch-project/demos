@@ -32,3 +32,12 @@ repos:
     rev: v2.1.0
     hooks:
         -   id: docker-compose-check
+
+-   repo: local
+    hooks:
+    -   id: run-all-tests
+        name: run all tests
+        entry: python ./demo/test/run_all_tests.py
+        language: python
+        always_run: true
+        verbose: true
