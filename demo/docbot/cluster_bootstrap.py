@@ -319,7 +319,8 @@ def initialize_index(client: MLClient) -> None:
     else:
         raise Exception("Failed to create index.")
 
-def ml_cleanup(client: MLClient) -> None:
+def ml_cleanup(client: MLClient, ingest_pipeline: str = "cohere-ingest-pipeline", 
+               search_pipeline: str = "rag-search-pipeline", index: str = "cohere-index") -> None:
   """
     Args:
         client: MLCLient
@@ -352,15 +353,23 @@ def ml_cleanup(client: MLClient) -> None:
       raise Exception("Failed to delete connector.")
 
   # Delete ingest pipeline
-  delete_pipeline_response = client._client.ingest.delete_pipeline(id='cohere-ingest-pipeline')
+  delete_pipeline_response = client._client.ingest.delete_pipeline(id=ingest_pipeline)
   if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
       print('\nDeleting pipeline:')
       print(delete_pipeline_response)
   else:
       raise Exception("Failed to delete ingest pipeline.")
+  
+  # Delete search pipeline
+  delete_search_pipeline_response = client.delete_search_pipeline(id=search_pipeline)
+  if delete_search_pipeline_response and 'acknowledged' in delete_search_pipeline_response and delete_search_pipeline_response['acknowledged']:
+      print('\nDeleting pipeline:')
+      print(delete_search_pipeline_response)
+  else:
+      raise Exception("Failed to delete search pipeline.")
 
   # Delete index
-  delete_index_response = client._client.indices.delete(index='cohere-index')
+  delete_index_response = client._client.indices.delete(index=index)
   if delete_index_response and 'acknowledged' in delete_index_response and delete_index_response['acknowledged']:
       print('\nDeleting index:')
       print(delete_index_response)
@@ -370,6 +379,7 @@ def ml_cleanup(client: MLClient) -> None:
   # Clear MODEL_STATE
   for state in MODEL_STATE:
       MODEL_STATE[state] = None
+
 
 def main():
     try:
