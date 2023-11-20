@@ -1,18 +1,21 @@
-import requests
-import os, json, sys
-sys.path.append('./demo/')
-from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient
-from opensearchpy import OpenSearch
-
-import dotenv
 from os import getenv
+import dotenv
+from opensearchpy import OpenSearch
+import sys
+sys.path.append('./demo/')
+from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient, model_exists
+import requests
+import os
+import json
+
 
 dotenv.load_dotenv()
 COHERE_KEY = getenv('COHERE_KEY')
 MODEL_STATE = {
     "model_group_id": "",
     "connector_id": "",
-    "model_id": ""
+    "model_id": "",
+    "LLM_model_id": ""
 }
 
 
@@ -40,7 +43,7 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
     }
 
     if 'persistent' in current_settings and opensearch_compare_dictionaries(data, current_settings['persistent']):
-        print ("Cluster settings are already initialized!")
+        print("Cluster settings are already initialized!")
         return
 
     response = client.cluster.put_settings(body={"persistent": data})
@@ -52,42 +55,41 @@ def initialize_cluster_settings(client: OpenSearch) -> None:
         raise Exception("Failed to initialize cluster settings.")
 
 
-def init_index_template(client: MLClient, template_name = "nlp-template") -> None:
-
-  """
-  Args:
-    Client: OpenSearch
-  Returns:
-    returns None if template was created or is exists else raises Exception
-  """
-  if not client._client.indices.exists_template(name=template_name):
-    template = {
-    "index_patterns": [
-      "cohere*"
-    ],
-    "template": {
-      "settings": {
-        "number_of_shards": 1,
-        "number_of_replicas": 2,
-        "codec": "zstd_no_dict"
-        },
-      "mappings": {
-        "properties": {
-          "data": {
-            "index": False
-            },
-          "ancestors": {
-            "index": False
+def init_index_template(client: MLClient, template_name="nlp-template") -> None:
+    """
+    Args:
+      Client: OpenSearch
+    Returns:
+      returns None if template was created or is exists else raises Exception
+    """
+    if not client._client.indices.exists_template(name=template_name):
+        template = {
+            "index_patterns": [
+                "cohere*"
+            ],
+            "template": {
+                "settings": {
+                    "number_of_shards": 1,
+                    "number_of_replicas": 2,
+                    "codec": "zstd_no_dict"
+                },
+                "mappings": {
+                    "properties": {
+                        "data": {
+                            "index": False
+                        },
+                        "ancestors": {
+                            "index": False
+                        }
+                    }
+                }
             }
-          }
         }
-      }
-    }
 
-    response = client._client.indices.put_template(name=template_name, body=template)
-    if not response["acknowledged"]:
-      raise Exception("Unable to create index template.")
-
+        response = client._client.indices.put_template(
+            name=template_name, body=template)
+        if not response["acknowledged"]:
+            raise Exception("Unable to create index template.")
 
 
 def initialize_model_group(client: MLClient) -> None:
@@ -116,9 +118,10 @@ def initialize_model_group(client: MLClient) -> None:
             print("Model group initialized successfully!")
             MODEL_STATE["model_group_id"] = response
         else:
-            raise Exception(f"Failed to initialize model group. Response: {response}")
-    else: print(f"Model group '{model_group_name}' already exists.")
-
+            raise Exception(
+                f"Failed to initialize model group. Response: {response}")
+    else:
+        print(f"Model group '{model_group_name}' already exists.")
 
 
 def initialize_connector(client: MLClient) -> None:
@@ -168,43 +171,47 @@ def initialize_connector(client: MLClient) -> None:
         print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
 
-def initialize_model(client: MLClient) -> None:
+def initialize_model(client: MLClient, model_name: str, model_descp: str) -> None:
     """
+    Initialize a model in OpenSearch.
+    (In the model_meta json, the parameters field is only needed when using a model
+    other than text-embed-2 since it defaults to text-embedding-ada-002)
+
     Args:
-        Client: OpenSearch
+        client (MLClient): The OpenSearch ML client.
+        model_name (str): The name of the model to initialize.
+        model_descp (str): The description of the model.
+
     Returns:
-        returns None if model was created or is exists else raises Exception
+        None if model is initialized successfully or already initialized else raises Exception
+
     """
-    # Define the model data. For now, placeholders are used for model_group_id and connector_id.
-    model_data = {
-        "name": "embed-english-v2.0",
+    model_meta = {
+        "name": model_name,
         "function_name": "remote",
-        "description": "test model",
+        "description": model_descp,
         "model_group_id": MODEL_STATE["model_group_id"],
         "connector_id": MODEL_STATE["connector_id"]
     }
 
-    # Check if the model already exists
-    existing_models = client.search_model({
-        "query": {
-            "match": {
-                "name": "embed-english-v2.0"
-            }
-        }
-    })
+    if model_name == "command-nightly":
+        model_meta["parameters"] = {"model": "command-nightly"}
 
-    if existing_models["hits"]["total"]["value"] > 0:
-        print("Model 'embed-english-v2.0' already exists. Skipping initialization.")
-        MODEL_STATE["connector_id"] = existing_models["hits"]["hits"][0]["_id"]
-    else:
-        # Register (and deploy) the model
-        response = client.register_connector_model(model_meta_json=model_data)
+    model_id = model_exists(client, model_name)
+    if model_id:
+        MODEL_STATE["connector_id"] = model_id
+        print("Model " + model_name + " already exists. Skipping initialization.")
+        return
 
-        if isinstance(response, str):
-            print("Model 'embed-english-v2.0' initialized successfully!")
+    response = client.register_connector_model(model_meta_json=model_meta)
+    if isinstance(response, str):
+        if (model_name == "command-nightly"):
+            MODEL_STATE["LLM_model_id"] = response
         else:
-           raise Exception("Failed to initialize model.")
-
+            MODEL_STATE["model_id"] = response
+        print("Model " + model_name + " initialized successfully!")
+    else:
+        raise Exception("Failed to initialize model.")
 
 
 def initialize_ingestion_pipeline(client: MLClient):
@@ -242,6 +249,7 @@ def initialize_ingestion_pipeline(client: MLClient):
             raise Exception("Failed to initialize pipeline.")
         pass
 
+      
 def initialize_rag_search_pipeline(client: MLClient, id: str = "rag-search-pipeline") -> None:
     """
     Args:
@@ -271,6 +279,7 @@ def initialize_rag_search_pipeline(client: MLClient, id: str = "rag-search-pipel
             print(f"Pipeline {id} initialized succesfully.")
         else:
             raise Exception("Failed to initialize pipeline.")
+
 
 def initialize_index(client: MLClient) -> None:
     """
@@ -311,7 +320,8 @@ def initialize_index(client: MLClient) -> None:
         return
 
     # Create the index
-    response = client._client.indices.create(index="cohere-index", body=index_data)
+    response = client._client.indices.create(
+        index="cohere-index", body=index_data)
 
     # Check if the request was successful
     if response and 'acknowledged' in response and response['acknowledged']:
@@ -390,7 +400,8 @@ def main():
         initialize_cluster_settings(client)
         initialize_model_group(client)
         initialize_connector(client)
-        initialize_model(client)
+        initialize_model(client, "embed-english-v2.0", "test model")
+        initialize_model(client, "command-nightly", "Cohere Command Model")
         initialize_ingestion_pipeline(client)
         initialize_rag_search_pipeline(client)
         initialize_index(client)
