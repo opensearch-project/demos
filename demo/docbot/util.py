@@ -5,12 +5,13 @@ from opensearch_py_ml.ml_commons import MLCommonClient
 from copy import deepcopy
 
 
-dotenv.load_dotenv()
-ADMIN_PW = getenv('ADMIN_PW')
-ADMIN_UN = getenv('ADMIN_UN')
-HOSTS = getenv('HOSTS')
-DEVELOPMENT= getenv('DEVELOPMENT')
+if (not dotenv.load_dotenv()):
+  print("No .env file found. Loading defaults...")
 
+ADMIN_PW = 'admin' if getenv('ADMIN_PW') == None else getenv('ADMIN_PW')
+ADMIN_UN = 'admin' if getenv('ADMIN_UN') == None else getenv('ADMIN_UN')
+HOSTS = 'localhost:9200' if getenv('HOSTS') == None else getenv('HOSTS')
+DEVELOPMENT= True if getenv('DEVELOPMENT') == None else getenv('DEVELOPMENT')
 
 ##### Monkey patching 🤪 #####
 
@@ -20,6 +21,7 @@ from opensearch_py_ml.ml_commons.ml_common_utils import (
 )
 from typing import Union, Any
 from datetime import time
+from opensearchpy.client.utils import SKIP_IN_PATH, _make_path
 
 
 class MLClient(MLCommonClient):
@@ -186,13 +188,62 @@ class MLClient(MLCommonClient):
           url=API_URL,
       )
 
+  def get_search_pipeline(self, id=None) -> dict:
+      """
+      Returns search pipeline if it exists
+
+      :param id: Id of pipeline to be retrieved
+      :type id: string
+      :return: returns json object, if pipeline exists
+      :rtype: object
+      """
+      return self._client.transport.perform_request(
+         method="GET",
+         url=_make_path("_search", "pipeline", id)
+      )
+
+  def put_search_pipeline(self, id: str, body: dict) -> dict:
+      """
+      Creates or updates search pipeline
+
+      :param id: Pipeline id
+      :type id: string
+      :param body: body of search pipeline request
+      :type body: dict
+      :return: returns json object if request was successful
+      :rtype: object
+      """
+      for param in (id, body):
+            if param in SKIP_IN_PATH:
+                raise ValueError("Empty value passed for a required argument.")
+
+      return self._client.transport.perform_request(
+         method="PUT",
+         url=_make_path("_search", "pipeline", id),
+         body=body
+      )
+
+  def delete_search_pipeline(self, id: str) -> None:
+      """
+      Deletes search pipeline
+
+      :param id: Pipeline id
+      :type id: string
+      :return: returns json object if request was successful
+      :rtype: object
+      """
+      return self._client.transport.perform_request(
+         method="DELETE",
+         url=_make_path("_search", "pipeline", id)
+      )
+
 ##### END MONKEYPATCH #####
 
-def opensearch_connection_builder(ml_client=False) -> MLCommonClient | OpenSearch:
+def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClient | OpenSearch:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
-    "use_ssl": True,
+    "use_ssl": use_ssl,
     "verify_certs": True
   }
 

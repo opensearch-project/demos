@@ -1,10 +1,11 @@
 from os import getenv
 import dotenv
 from opensearchpy import OpenSearch
+import sys
+sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient, model_exists
-import requests
-import os
-import json
+
+
 import sys
 sys.path.append('./demo/')
 
@@ -18,7 +19,7 @@ class ClusterBootstrap:
         self.connector_id = ""
         self.embedding_model = ""
         self.language_model = ""
-        self._client = opensearch_connection_builder(
+        self.client = opensearch_connection_builder(
             ml_client=True, use_ssl=use_ssl)
 
         self._initialize_cluster_settings()
@@ -172,6 +173,7 @@ class ClusterBootstrap:
             self.connector_id = connector_id
             print("Connector 'Cohere Connector' already exists. Skipping initialization.")
 
+
     def initialize_model(self, model_name: str, model_descp: str):
         """
         Initialize a model in OpenSearch.
@@ -218,7 +220,7 @@ class ClusterBootstrap:
             "processors": [
                 {
                     "text_embedding": {
-                        "embedding_model": MODEL_STATE["embedding_model"],
+                        "embedding_model": self.embedding_model,
                         "field_map": {
                             "content": "content_embedding"
                         }
@@ -241,6 +243,37 @@ class ClusterBootstrap:
             else:
                 raise Exception("Failed to initialize pipeline.")
 
+    def initialize_rag_search_pipeline(self, id: str = "rag-search-pipeline") -> None:
+    """
+    Args:
+        Client: MLClient
+    Returns:
+        returns None if pipeline was created or it exists else raises Exception
+    """
+    body = {
+      "response_processors": [
+        {
+          "retrieval_augmented_generation": {
+            "description": "RAG search pipeline to be used with Cohere index",
+            "model_id": self.language_model,
+            "context_field_list": ["content"]
+          }
+        }
+      ]
+    }
+    # Check if pipeline exists, else create it
+    try:
+        pipeline = self.client.get_search_pipeline(id=id)
+        print(f"Pipeline {id} already exisits. Skipping initialization")
+        return
+    except:
+        response = self.client.put_search_pipeline(id=id, body=body)
+        if response and "acknowledged" in response and response["acknowledged"]:
+            print(f"Pipeline {id} initialized succesfully.")
+        else:
+            raise Exception("Failed to initialize pipeline.")
+
+
     def initialize_index(self):
         index_data = {
             "settings": {
@@ -260,10 +293,10 @@ class ClusterBootstrap:
                     },
                     "content": {
                         "type": "text"
-                    }
-                }
-            }
-        }
+            raise Exception(
+                f"Failed to initialize model group. Response: {response}")
+    else:
+        print(f"Model group '{model_group_name}' already exists.")
 
         index_exists = self.client._client.indices.exists(index="cohere-index")
         if not index_exists:
@@ -276,6 +309,8 @@ class ClusterBootstrap:
         else:
             print("Index 'cohere-index' already exists. Skipping initialization.")
 
+                      
+                      
     def ml_cleanup(self):
         try:
             if self.embedding_model:
@@ -305,14 +340,6 @@ class ClusterBootstrap:
                 else:
                     raise Exception("Failed to delete connector.")
 
-            delete_pipeline_response = self.client._client.ingest.delete_pipeline(
-                id='cohere-ingest-pipeline')
-            if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
-                print('\nDeleting pipeline:')
-                print(delete_pipeline_response)
-            else:
-                raise Exception("Failed to delete ingest pipeline.")
-
             delete_index_response = self.client._client.indices.delete(
                 index='cohere-index')
             if delete_index_response and 'acknowledged' in delete_index_response and delete_index_response['acknowledged']:
@@ -320,7 +347,22 @@ class ClusterBootstrap:
                 print(delete_index_response)
             else:
                 raise Exception("Failed to delete index.")
-
+                      
+            delete_pipeline_response = self.client._client.ingest.delete_pipeline(
+                id='cohere-ingest-pipeline')
+            if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
+                print('\nDeleting pipeline:')
+                print(delete_pipeline_response)
+            else:
+                raise Exception("Failed to delete ingest pipeline.")
+                      
+              # Delete search pipeline
+            delete_search_pipeline_response = client.delete_search_pipeline(id=search_pipeline)
+            if delete_search_pipeline_response and 'acknowledged' in delete_search_pipeline_response and delete_search_pipeline_response['acknowledged']:
+                print('\nDeleting pipeline:')
+                print(delete_search_pipeline_response)
+            else:
+                raise Exception("Failed to delete search pipeline.")
         except Exception as e:
             print(f"An error occurred during cleanup: {e}")
 
