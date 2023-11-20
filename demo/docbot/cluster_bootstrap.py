@@ -249,6 +249,37 @@ def initialize_ingestion_pipeline(client: MLClient):
             raise Exception("Failed to initialize pipeline.")
         pass
 
+      
+def initialize_rag_search_pipeline(client: MLClient, id: str = "rag-search-pipeline") -> None:
+    """
+    Args:
+        Client: MLClient
+    Returns:
+        returns None if pipeline was created or it exists else raises Exception
+    """
+    body = {
+      "response_processors": [
+        {
+          "retrieval_augmented_generation": {
+            "description": "RAG search pipeline to be used with Cohere index",
+            "model_id": MODEL_STATE["LLM_model_id"],
+            "context_field_list": ["content"]
+          }
+        }
+      ]
+    }
+    # Check if pipeline exists, else create it
+    try:
+        pipeline = client.get_search_pipeline(id=id)
+        print(f"Pipeline {id} already exisits. Skipping initialization")
+        return
+    except:
+        response = client.put_search_pipeline(id=id, body=body)
+        if response and "acknowledged" in response and response["acknowledged"]:
+            print(f"Pipeline {id} initialized succesfully.")
+        else:
+            raise Exception("Failed to initialize pipeline.")
+
 
 def initialize_index(client: MLClient) -> None:
     """
@@ -261,7 +292,8 @@ def initialize_index(client: MLClient) -> None:
     index_data = {
         "settings": {
             "index.knn": True,
-            "default_pipeline": "cohere-ingest-pipeline"
+            "default_pipeline": "cohere-ingest-pipeline",
+            "default.search.default_pipeline": "rag-search-pipeline"
         },
         "mappings": {
             "properties": {
@@ -297,7 +329,8 @@ def initialize_index(client: MLClient) -> None:
     else:
         raise Exception("Failed to create index.")
 
-def ml_cleanup(client: MLClient) -> None:
+def ml_cleanup(client: MLClient, ingest_pipeline: str = "cohere-ingest-pipeline", 
+               search_pipeline: str = "rag-search-pipeline", index: str = "cohere-index") -> None:
   """
     Args:
         client: MLCLient
@@ -330,15 +363,23 @@ def ml_cleanup(client: MLClient) -> None:
       raise Exception("Failed to delete connector.")
 
   # Delete ingest pipeline
-  delete_pipeline_response = client._client.ingest.delete_pipeline(id='cohere-ingest-pipeline')
+  delete_pipeline_response = client._client.ingest.delete_pipeline(id=ingest_pipeline)
   if delete_pipeline_response and 'acknowledged' in delete_pipeline_response and delete_pipeline_response['acknowledged']:
       print('\nDeleting pipeline:')
       print(delete_pipeline_response)
   else:
       raise Exception("Failed to delete ingest pipeline.")
+  
+  # Delete search pipeline
+  delete_search_pipeline_response = client.delete_search_pipeline(id=search_pipeline)
+  if delete_search_pipeline_response and 'acknowledged' in delete_search_pipeline_response and delete_search_pipeline_response['acknowledged']:
+      print('\nDeleting pipeline:')
+      print(delete_search_pipeline_response)
+  else:
+      raise Exception("Failed to delete search pipeline.")
 
   # Delete index
-  delete_index_response = client._client.indices.delete(index='cohere-index')
+  delete_index_response = client._client.indices.delete(index=index)
   if delete_index_response and 'acknowledged' in delete_index_response and delete_index_response['acknowledged']:
       print('\nDeleting index:')
       print(delete_index_response)
@@ -348,6 +389,7 @@ def ml_cleanup(client: MLClient) -> None:
   # Clear MODEL_STATE
   for state in MODEL_STATE:
       MODEL_STATE[state] = None
+
 
 def main():
     try:
@@ -361,6 +403,7 @@ def main():
         initialize_model(client, "embed-english-v2.0", "test model")
         initialize_model(client, "command-nightly", "Cohere Command Model")
         initialize_ingestion_pipeline(client)
+        initialize_rag_search_pipeline(client)
         initialize_index(client)
     except Exception as e:
         print(f"An error occurred while initializing cluster bootstrap: {e}")
