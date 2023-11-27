@@ -19,8 +19,7 @@ class ClusterBootstrap:
         self.connector_id = ""
         self.embedding_model = ""
         self.language_model = ""
-        self.client = opensearch_connection_builder(
-            ml_client=True, use_ssl=use_ssl)
+        self.client = opensearch_connection_builder(use_ssl=use_ssl)
 
         self._initialize_cluster_settings()
         self._initialize_model_group()
@@ -37,6 +36,7 @@ class ClusterBootstrap:
         Returns:
             returns None if cluster settings was created or is exists else raise Exception
         """
+
         current_settings = self.client._client.cluster.get_settings()
 
         data = {
@@ -250,15 +250,15 @@ class ClusterBootstrap:
             returns None if pipeline was created or it exists else raises Exception
         """
         body = {
-        "response_processors": [
-            {
-            "retrieval_augmented_generation": {
-                "description": "RAG search pipeline to be used with Cohere index",
-                "model_id": self.language_model,
-                "context_field_list": ["content"]
-            }
-            }
-        ]
+            "response_processors": [
+                {
+                    "retrieval_augmented_generation": {
+                        "description": "RAG search pipeline to be used with Cohere index",
+                        "model_id": self.language_model,
+                        "context_field_list": ["content"]
+                    }
+                }
+            ]
         }
         # Check if pipeline exists, else create it
         try:
