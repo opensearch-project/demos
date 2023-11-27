@@ -239,7 +239,7 @@ class MLClient(MLCommonClient):
 
 ##### END MONKEYPATCH #####
 
-def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClient | OpenSearch:
+def opensearch_connection_builder(use_ssl=True) -> MLClient:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
@@ -250,14 +250,7 @@ def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClie
   if DEVELOPMENT:
     config['verify_certs'] = False
 
-  if ml_client:
-    client = MLClient(
-      OpenSearch(**config)
-    )
-  else:
-    client = OpenSearch(**config)
-
-  return client
+  return MLClient(OpenSearch(**config))
 
 
 # Handles the case for when dictionary values are lists
