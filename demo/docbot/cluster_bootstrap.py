@@ -99,7 +99,7 @@ class ClusterBootstrap:
             if not response["acknowledged"]:
                 raise Exception("Unable to create index template.")
 
-    def initialize_model_group(self):
+    def initialize_model_group(self, model_group_name: str = "Cohere_Group"):
         """
         Args:
             Self
@@ -107,13 +107,11 @@ class ClusterBootstrap:
             returns None if model group was created or is exists else raises Exception
         """
 
-        model_group_name = "Cohere_Group"
-        response = self.client.get_model_group_id(
-            model_group_name=model_group_name)
+        response = self.client.get_model_group_id(model_group_name=model_group_name)
         if response is None:
             data = {
                 "name": model_group_name,
-                "description": "Public Cohere Model Group",
+                "description": "Public" + model_group_name + " model group",
                 "access_mode": "public"
             }
             response = self.client.register_model_group(body=data)
@@ -126,7 +124,7 @@ class ClusterBootstrap:
         else:
             print(f"Model group '{model_group_name}' already exists.")
 
-    def initialize_connector(self):
+    def initialize_connector(self, connector_name: str = "Cohere Connector"):
         """
         Args:
             Self
@@ -134,12 +132,12 @@ class ClusterBootstrap:
             returns None if connector was created or is exists else raises Exception
         """
         connector_data = {
-            "name": "Cohere Connector",
+            "name": connector_name,
             "description": "External connector for connections into Cohere",
             "version": "1.0",
             "protocol": "http",
             "credential": {
-                "cohere_key": COHERE_KEY
+                "key": self.Cohere_key
             },
             "parameters": {
                 "model": "embed-english-v2.0",
@@ -150,7 +148,7 @@ class ClusterBootstrap:
                 "method": "POST",
                 "url": "https://api.cohere.ai/v1/embed",
                 "headers": {
-                    "Authorization": "Bearer ${credential.cohere_key}"
+                    "Authorization": "Bearer ${credential.key}"
                 },
                 "request_body": "{ \"texts\": ${parameters.prompt}, \"truncate\": \"${parameters.truncate}\", \"model\": \"${parameters.model}\" }",
                 "pre_process_function": "connector.pre_process.cohere.embedding",
@@ -159,19 +157,19 @@ class ClusterBootstrap:
         }
 
         connector_id = self.client.get_connector_id(
-            connector_name="Cohere Connector")
+            connector_name=connector_name)
         if connector_id is None:
             response = self.client.create_connector(connector_data)
             connector_id = self.client.get_connector_id(
-                connector_name="Cohere Connector")
+                connector_name=connector_name)
             if connector_id:
-                print("Connector 'Cohere Connector' initialized successfully!")
+                print(f"Connector {connector_name} initialized successfully!")
                 self.connector_id = connector_id
             else:
                 raise Exception("Failed to initialize connector.")
         else:
             self.connector_id = connector_id
-            print("Connector 'Cohere Connector' already exists. Skipping initialization.")
+            print(f"Connector {connector_name} already exists. Skipping initialization.")
 
     def initialize_model(self, model_name: str, model_descp: str):
         """
@@ -199,7 +197,7 @@ class ClusterBootstrap:
         model_id = model_exists(client=self.client, model_name=model_name)
         if model_id:
             self.connector_id = model_id
-            print("Model " + model_name + " already exists. Skipping initialization.")
+            print(f"Model {model_name} already exists. Skipping initialization.")
             return
 
         response = self.client.register_connector_model(
@@ -209,11 +207,11 @@ class ClusterBootstrap:
                 self.language_model = response
             else:
                 self.embedding_model = response
-            print("Model " + model_name + " initialized successfully!")
+            print(f"Model {model_name} initialized successfully!")
         else:
             raise Exception("Failed to initialize model.")
 
-    def initialize_ingestion_pipeline(self):
+    def initialize_ingestion_pipeline(self, id: str = "cohere-ingest-pipeline"):
         pipeline_data = {
             "description": "Cohere Neural Search Pipeline",
             "processors": [
@@ -229,16 +227,13 @@ class ClusterBootstrap:
         }
 
         try:
-            self.client._client.ingest.get_pipeline(
-                id="cohere-ingest-pipeline")
-            print(
-                "Pipeline 'cohere-ingest-pipeline' already exists. Skipping initialization.")
+            self.client._client.ingest.get_pipeline(id=id)
+            print(f"Pipeline {id} already exists. Skipping initialization.")
             return
         except:
-            response = self.client._client.ingest.put_pipeline(
-                id="cohere-ingest-pipeline", body=pipeline_data)
+            response = self.client._client.ingest.put_pipeline(id=id, body=pipeline_data)
             if response and 'acknowledged' in response and response['acknowledged']:
-                print("Pipeline 'cohere-ingest-pipeline' initialized successfully!")
+                print(f"Pipeline {id} initialized successfully!")
             else:
                 raise Exception("Failed to initialize pipeline.")
 
@@ -272,7 +267,7 @@ class ClusterBootstrap:
             else:
                 raise Exception("Failed to initialize pipeline.")
 
-    def initialize_index(self):
+    def initialize_index(self, index_name: str = "cohere-index"):
         index_data = {
             "settings": {
                 "index.knn": True,
@@ -296,17 +291,17 @@ class ClusterBootstrap:
             }
         }
         # Check if the index already exists
-        index_exists = self.client._client.indices.exists(index="cohere-index")
+        index_exists = self.client._client.indices.exists(index=index_name)
         if index_exists is not None:
-            print("Index 'cohere-index' already exists. Skipping initialization.")
+            print(f"Index {index_name} already exists. Skipping initialization.")
             return
 
         # Create the index
-        response = self.client._client.indices.create(index="cohere-index", body=index_data)
+        response = self.client._client.indices.create(index=index_name, body=index_data)
 
         # Check if the request was successful
         if response and 'acknowledged' in response and response['acknowledged']:
-            print("Index 'cohere-index' created successfully!")
+            print(f"Index {index_name} created successfully!")
         else:
             raise Exception("Failed to create index.")
 
