@@ -188,6 +188,24 @@ class MLClient(MLCommonClient):
           url=API_URL,
       )
 
+  def put_conversation(self, body:dict) -> dict:
+    """
+    Creates new conversation for Cohere
+    :param body: body of search pipeline request (should be name: "some_name")
+    :type body: dict
+    :return: returns json object if request was successful
+    :rtype: object
+    """
+    for param in (id, body):
+      if param in SKIP_IN_PATH:
+          raise ValueError("Empty value passed for a required argument.")
+
+    return self._client.transport.perform_request(
+        method="PUT",
+        url=_make_path("_plugins", "_ml", "memory", "conversation"),
+        body=body
+    )
+
   def get_search_pipeline(self, id=None) -> dict:
       """
       Returns search pipeline if it exists

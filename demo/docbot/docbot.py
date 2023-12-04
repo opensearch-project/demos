@@ -1,17 +1,21 @@
 import sys
-from tkinter.filedialog import Open
-from token import OP
-from unittest import result
 from opensearchpy import OpenSearch
 sys.path.append('./demo/')
 
 from docbot.language_pipeline import generate_response
-from opensearchpy import OpenSearch
+from docbot.util import MLClient, put_conversation
 
 class DocBot():
-  def __init__ (self, open_search:OpenSearch):
-      self.conversations = {}
-      self.OpenSearch = open_search
+  def __init__ (self, client:MLClient):
+    """
+    Args:
+        Client: OpenSearch
+    Returns:
+        returns None if connector was created or is exists else raises Exception
+    """
+
+    self.conversations = {}
+    self.client = client
 
   def handle_message(self, message_object):
     # get conversation id form _conversation handler
@@ -34,29 +38,13 @@ class DocBot():
                 }
               }
             }
-      result = self.OpenSearch.search(index='cohere', body=search_query)
+      result = self.client._client.search(index='cohere', body=search_query)
       if result['hits']['total']['value'] > 0:
         data = result.json()
         hits = data.get('hits', {}).get('hits', [])
         id = hits[0]['id']
       else:
-        max_id_query = {
-          "size": 0,
-          "aggs": {
-            "max_id": {
-              "max": {
-                  "field": "id"
-                }
-              }
-            }
-          }
-        max_id_response = self.OpenSearch.search(index="your_index_name", body=max_id_query)
-        if max_id_response["aggregations"]["max_id"]["value"] != None:
-          max_id = max_id_response["aggregations"]["max_id"]["value"]
-        else:
-          max_id = 0
-        id = max_id + 1
-        self.conversations[conversation_name] = id
+        id = put_conversation([name:conversation_name])
 
     #Then return the relevant ID
     if id == None:
