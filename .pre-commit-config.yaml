@@ -32,3 +32,12 @@ repos:
     rev: v2.1.0
     hooks:
         -   id: docker-compose-check
+
+-   repo: https://github.com/pre-commit/mirrors-yapf
+    rev: v0.31.0  # Replace with the desired version of YAPF
+    hooks:
+      - id: yapf
+        files: \.py$
+        additional_dependencies: [toml]
+        entry: yapf
+        args: [-i]
