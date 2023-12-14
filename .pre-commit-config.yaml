@@ -38,3 +38,6 @@ repos:
     hooks:
       - id: yapf
         files: \.py$
+        additional_dependencies: [toml]
+        entry: yapf
+        args: [-i]
