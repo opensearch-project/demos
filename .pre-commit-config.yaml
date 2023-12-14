@@ -32,3 +32,12 @@ repos:
     rev: v2.1.0
     hooks:
         -   id: docker-compose-check
+
+    #MyPy
+-   repo: local
+    hooks:
+    -   id: mypy
+        name: mypy
+        entry: docbot
+        language: python  
+        types: [python]
