@@ -7,6 +7,7 @@
 import discord, sys
 import dotenv
 from os import getenv
+from docbot import DocBot
 dotenv.load_dotenv()
 DISCORD_TOKEN= getenv("DISCORD_TOKEN")
 
@@ -16,6 +17,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
+docbot = DocBot()
 
 @client.event
 async def on_ready():
