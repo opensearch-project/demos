@@ -35,54 +35,9 @@ repos:
 
 -   repo: local
     hooks:
-    -   id: run_cluster_bootstrap_test
-        name: run cluster bootstrap test
-        entry: python ./demo/test/test_cluster_bootstrap.py
-        language: python
-        always_run: true
-        verbose: true
-
--   repo: local
-    hooks:
-    -   id: run_ingestion_test
-        name: run ingestion test
-        entry: python ./demo/test/test_ingestion.py
-        language: python
-        always_run: true
-        verbose: true
-
--   repo: local
-    hooks:
-    -   id: run_integration_test
-        name: run integration test
-        entry: python ./demo/test/test_integration.py
-        language: python
-        always_run: true
-        verbose: true
-
--   repo: local
-    hooks:
-    -   id: run_query_test
-        name: run query test
-        entry: python ./demo/test/test_query_pipeline.py
-        language: python
-        always_run: true
-        verbose: true
-
--   repo: local
-    hooks:
-    -   id: run_util_test
-        name: run util test
-        entry: python ./demo/test/test_util.py
-        language: python
-        always_run: true
-        verbose: true
-
--   repo: local
-    hooks:
-    -   id: run_ingestion_test
-        name: run ingestion test
-        entry: python ./demo/test/test_ingestion.py
+    -   id: run_all_tests
+        name: run tests
+        entry: pytest
         language: python
         always_run: true
         verbose: true
