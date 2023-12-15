@@ -28,5 +28,6 @@ async def on_message(message):
 
     if message.content.startswith('!docbot'):
         msg = message.content
-        await message.channel.send('This is what you sent: ' + msg)
+        response = docbot.handle_message(msg)
+        await message.channel.send(response)
 client.run(DISCORD_TOKEN)
