@@ -27,9 +27,10 @@ class ClusterBootstrap:
         self._initialize_model("embed-english-v2.0", "Embedding Model")
         self._initialize_model("command-nightly", "Cohere Command Model")
         self._initialize_ingestion_pipeline()
+        self._initialize_rag_search_pipeline()
         self._initialize_index()
 
-    def initialize_cluster_settings(self):
+    def _initialize_cluster_settings(self):
         """
         Args:
             Self
@@ -63,7 +64,7 @@ class ClusterBootstrap:
         else:
             raise Exception("Failed to initialize cluster settings.")
 
-    def init_index_template(self, template_name="nlp-template"):
+    def _init_index_template(self, template_name="nlp-template"):
         """
         Args:
             Self
@@ -99,7 +100,7 @@ class ClusterBootstrap:
             if not response["acknowledged"]:
                 raise Exception("Unable to create index template.")
 
-    def initialize_model_group(self, model_group_name: str = "Cohere_Group"):
+    def _initialize_model_group(self, model_group_name: str = "Cohere_Group"):
         """
         Args:
             Self
@@ -124,7 +125,7 @@ class ClusterBootstrap:
         else:
             print(f"Model group '{model_group_name}' already exists.")
 
-    def initialize_connector(self, connector_name: str = "Cohere Connector"):
+    def _initialize_connector(self, connector_name: str = "Cohere Connector"):
         """
         Args:
             Self
@@ -171,7 +172,7 @@ class ClusterBootstrap:
             self.connector_id = connector_id
             print(f"Connector {connector_name} already exists. Skipping initialization.")
 
-    def initialize_model(self, model_name: str, model_descp: str):
+    def _initialize_model(self, model_name: str, model_descp: str):
         """
         Initialize a model in OpenSearch.
         (In the model_meta json, the parameters field is only needed when using a model
@@ -211,7 +212,7 @@ class ClusterBootstrap:
         else:
             raise Exception("Failed to initialize model.")
 
-    def initialize_ingestion_pipeline(self, id: str = "cohere-ingest-pipeline"):
+    def _initialize_ingestion_pipeline(self, id: str = "cohere-ingest-pipeline"):
         pipeline_data = {
             "description": "Cohere Neural Search Pipeline",
             "processors": [
@@ -237,7 +238,7 @@ class ClusterBootstrap:
             else:
                 raise Exception("Failed to initialize pipeline.")
 
-    def initialize_rag_search_pipeline(self, id: str = "rag-search-pipeline") -> None:
+    def _initialize_rag_search_pipeline(self, id: str = "rag-search-pipeline") -> None:
         """
         Args:
             Client: MLClient
@@ -267,7 +268,7 @@ class ClusterBootstrap:
             else:
                 raise Exception("Failed to initialize pipeline.")
 
-    def initialize_index(self, index_name: str = "cohere-index"):
+    def _initialize_index(self, index_name: str = "cohere-index"):
         index_data = {
             "settings": {
                 "index.knn": True,
@@ -351,7 +352,7 @@ class ClusterBootstrap:
                 raise Exception("Failed to delete ingest pipeline.")
 
               # Delete search pipeline
-            delete_search_pipeline_response = client.delete_search_pipeline(id=search_pipeline)
+            delete_search_pipeline_response = self.client.delete_search_pipeline(id="rag-search-pipeline")
             if delete_search_pipeline_response and 'acknowledged' in delete_search_pipeline_response and delete_search_pipeline_response['acknowledged']:
                 print('\nDeleting pipeline:')
                 print(delete_search_pipeline_response)
