@@ -5,9 +5,8 @@ import sys
 sys.path.append('./demo/')
 from docbot.util import opensearch_connection_builder, opensearch_compare_dictionaries, MLClient, model_exists
 
-
-import sys
-sys.path.append('./demo/')
+# import sys
+# sys.path.append('./demo/')
 
 dotenv.load_dotenv()
 
