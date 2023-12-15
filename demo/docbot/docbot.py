@@ -4,6 +4,8 @@ sys.path.append('./demo/')
 
 from docbot.language_pipeline import generate_response
 from docbot.util import MLClient, put_conversation
+from cluster_bootstrap import ClusterBootstrap
+from docbot.ingestion import read_files_from_data, ingest_to_opensearch
 
 class DocBot():
   def __init__ (self, client:MLClient):
@@ -16,6 +18,14 @@ class DocBot():
 
     self.conversations = {}
     self.client = client
+    self.cluster_bootstrap = ClusterBootstrap(use_ssl=True)
+
+    # Ingest documents into OpenSearch
+    try:
+        data_list = read_files_from_data()
+        ingest_to_opensearch(data_list)
+    except Exception as e:
+        print(f"An exception occurred during document ingestion: {e}")
 
   def handle_message(self, message_object):
     # get conversation id form _conversation handler
