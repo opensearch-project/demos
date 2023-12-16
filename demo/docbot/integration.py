@@ -7,6 +7,7 @@
 import discord, sys
 import dotenv
 from os import getenv
+from docbot import DocBot
 dotenv.load_dotenv()
 DISCORD_TOKEN= getenv("DISCORD_TOKEN")
 
@@ -16,6 +17,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
+docbot = DocBot()
 
 @client.event
 async def on_ready():
@@ -28,5 +30,6 @@ async def on_message(message):
 
     if message.content.startswith('!docbot'):
         msg = message.content
-        await message.channel.send('This is what you sent: ' + msg)
+        response = docbot.handle_message(msg)
+        await message.channel.send(response)
 client.run(DISCORD_TOKEN)
