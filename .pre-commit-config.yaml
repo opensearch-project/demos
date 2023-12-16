@@ -33,6 +33,17 @@ repos:
     hooks:
         -   id: docker-compose-check
 
+
+-   repo: local
+    hooks:
+    -   id: run_all_tests
+        name: run tests
+        entry: pytest
+        language: python
+        always_run: true
+        verbose: true
+
+
 -   repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.31.0  # Replace with the desired version of YAPF
     hooks:
