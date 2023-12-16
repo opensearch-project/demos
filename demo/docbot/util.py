@@ -188,6 +188,24 @@ class MLClient(MLCommonClient):
           url=API_URL,
       )
 
+  def put_conversation(self, body:dict) -> dict:
+    """
+    Creates new conversation for Cohere
+    :param body: body of search pipeline request (should be name: "some_name")
+    :type body: dict
+    :return: returns json object if request was successful
+    :rtype: object
+    """
+    for param in (id, body):
+      if param in SKIP_IN_PATH:
+          raise ValueError("Empty value passed for a required argument.")
+
+    return self._client.transport.perform_request(
+        method="PUT",
+        url=_make_path("_plugins", "_ml", "memory", "conversation"),
+        body=body
+    )
+
   def get_search_pipeline(self, id=None) -> dict:
       """
       Returns search pipeline if it exists
@@ -239,7 +257,7 @@ class MLClient(MLCommonClient):
 
 ##### END MONKEYPATCH #####
 
-def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClient | OpenSearch:
+def opensearch_connection_builder(use_ssl=True) -> MLClient:
   config = {
     "hosts": HOSTS,
     "http_auth": (ADMIN_UN, ADMIN_PW),
@@ -250,14 +268,7 @@ def opensearch_connection_builder(ml_client=False, use_ssl=True) -> MLCommonClie
   if DEVELOPMENT:
     config['verify_certs'] = False
 
-  if ml_client:
-    client = MLClient(
-      OpenSearch(**config)
-    )
-  else:
-    client = OpenSearch(**config)
-
-  return client
+  return MLClient(OpenSearch(**config))
 
 
 # Handles the case for when dictionary values are lists
@@ -321,3 +332,22 @@ def shorten_json_file_same_index(json_file, num_words=150, overlap=0.3) -> list:
   result.append(temp)
 
   return result
+
+def model_exists(client: MLClient, model_name: str) -> bool:
+    """
+    Args:
+        client (MLClient): The OpenSearch ML client.
+        model_name (str): The name of the model to check.
+    Returns:
+        returns Model ID if model exists else None
+    """
+    existing_models = client.search_model({
+        "query": {
+            "match": {
+                "name": model_name
+            }
+        }
+    })
+    if existing_models["hits"]["total"]["value"] > 0:
+        return existing_models["hits"]["hits"][0]["_id"]
+    return None
