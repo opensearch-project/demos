@@ -23,7 +23,8 @@ class ClusterBootstrap:
 
         self._initialize_cluster_settings()
         self._initialize_model_group()
-        self._initialize_connector()
+        self._initialize_embed_connector()
+        self._initialize_llm_connector()
         self._initialize_model("embed-english-v2.0", "Embedding Model")
         self._initialize_model("command-nightly", "Cohere Command Model")
         self._initialize_ingestion_pipeline()
