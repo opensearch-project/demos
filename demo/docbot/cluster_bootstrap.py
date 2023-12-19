@@ -11,12 +11,12 @@ sys.path.append('./demo/')
 
 dotenv.load_dotenv()
 
-
 class ClusterBootstrap:
     def __init__(self, use_ssl=True):
         self.Cohere_key = getenv('COHERE_KEY')
         self.model_group_id = ""
-        self.connector_id = ""
+        self.embed_connector_id = ""
+        self.llm_connector_id = ""
         self.embedding_model = ""
         self.language_model = ""
         self.client = opensearch_connection_builder(use_ssl=use_ssl)
@@ -124,7 +124,7 @@ class ClusterBootstrap:
         else:
             print(f"Model group '{model_group_name}' already exists.")
 
-    def initialize_connector(self, connector_name: str = "Cohere Connector"):
+    def initialize_embed_connector(self, connector_name: str = "Cohere Connector"):
         """
         Args:
             Self
@@ -159,23 +159,68 @@ class ClusterBootstrap:
         connector_id = self.client.get_connector_id(
             connector_name=connector_name)
         if connector_id is None:
-            response = self.client.create_connector(connector_data)
+            self.client.create_connector(connector_data)
             connector_id = self.client.get_connector_id(
                 connector_name=connector_name)
             if connector_id:
                 print(f"Connector {connector_name} initialized successfully!")
-                self.connector_id = connector_id
+                self.embed_connector_id = connector_id
             else:
                 raise Exception("Failed to initialize connector.")
         else:
-            self.connector_id = connector_id
+            self.embed_connector_id = connector_id
+            print(f"Connector {connector_name} already exists. Skipping initialization.")
+    
+    def initialize_llm_connector(self, connector_name: str = "Command Nightly Connector"):
+        """
+        Args:
+            Self
+        Returns:
+            returns None if connector was created or is exists else raises Exception
+        """
+        connector_data = {
+            "name": connector_name,
+            "description": "External connector for connections into Command Nightly LLM",
+            "version": "1.0",
+            "protocol": "http",
+            "credential": {
+                "key": self.Cohere_key
+            },
+            "parameters": {
+                "model": "command-nightly",
+                "truncate": "AUTO",
+                "temperature": 0.3
+            },
+            "actions": [{
+                "action_type": "predict",
+                "method": "POST",
+                "url": "https://api.cohere.ai/v1/chat",
+                "headers": {
+                    "Authorization": "Bearer ${credential.key}"
+                },
+                "request_body": "{ \"message\": ${parameters.prompt}, \"prompt_truncation\": \"${parameters.truncate}\", \"model\": \"${parameters.model}\", \"temperature\": \"${parameters.temperature}\" }",
+                "post_process_function": "\n  return params['text']; \n"
+            }]
+        }
+
+        connector_id = self.client.get_connector_id(
+            connector_name=connector_name)
+        if connector_id is None:
+            self.client.create_connector(connector_data)
+            connector_id = self.client.get_connector_id(
+                connector_name=connector_name)
+            if connector_id:
+                print(f"Connector {connector_name} initialized successfully!")
+                self.llm_connector_id = connector_id
+            else:
+                raise Exception("Failed to initialize connector.")
+        else:
+            self.llm_connector_id = connector_id
             print(f"Connector {connector_name} already exists. Skipping initialization.")
 
     def initialize_model(self, model_name: str, model_descp: str):
         """
         Initialize a model in OpenSearch.
-        (In the model_meta json, the parameters field is only needed when using a model
-        other than text-embed-2 since it defaults to text-embedding-ada-002)
 
         Args:
             Self
@@ -191,12 +236,15 @@ class ClusterBootstrap:
             "function_name": "remote",
             "description": model_descp,
             "model_group_id": self.model_group_id,
-            "connector_id": self.connector_id
+            "connector_id": self.embed_connector_id if model_name == "embed-english-v2.0" else self.llm_connector_id,
         }
 
         model_id = model_exists(client=self.client, model_name=model_name)
         if model_id:
-            self.connector_id = model_id
+            if model_name == "embed-english-v2.0":
+                self.language_model = model_id
+            else:
+                self.embedding_model = model_id
             print(f"Model {model_name} already exists. Skipping initialization.")
             return
 
