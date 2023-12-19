@@ -64,7 +64,6 @@ class MLClient(MLCommonClient):
     if model_group_name is not None:
        query["query"]["match"].update({"name": model_group_name})
     else: raise Exception("Model group name and id cannot both be empty")
-
     output = self._client.transport.perform_request(
         method="POST",
         url=f"{ML_BASE_URI}/model_groups/_search",
@@ -116,13 +115,15 @@ class MLClient(MLCommonClient):
        query["query"]["match"].update({"name": connector_name})
     else: raise Exception("Model group name and id cannot both be empty")
 
-    output = self._client.transport.perform_request(
-        method="POST",
-        url=f"{ML_BASE_URI}/connectors/_search",
-        body=query,
-    )
+    try:
+      output = self._client.transport.perform_request(
+          method="POST",
+          url=f"{ML_BASE_URI}/connectors/_search",
+          body=query,
+      )
+    except Exception as e:
 
-    if not output["hits"]["total"]["value"] > 0:
+    # if not output["hits"]["total"]["value"] > 0:
        return None
 
     return output["hits"]["hits"][0]["_id"]

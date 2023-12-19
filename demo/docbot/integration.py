@@ -7,18 +7,20 @@
 import discord, sys
 import dotenv
 from os import getenv
-from docbot import DocBot
+sys.path.append('./demo/')
+print(sys.path)
+from docbot.controller import Controller
+from docbot.util import opensearch_connection_builder
+
 dotenv.load_dotenv()
 DISCORD_TOKEN= getenv("DISCORD_TOKEN")
 
-
-sys.path.append('./demo/')
 intents = discord.Intents.default()
 intents.message_content = True
 
 
 client = discord.Client(intents=intents)
-docbot = DocBot()
+docbot = Controller(opensearch_connection_builder())
 
 @client.event
 async def on_ready():
@@ -33,5 +35,4 @@ async def on_message(message):
         msg = message.content
         response = docbot.handle_message(msg)
         await message.channel.send(response)
-
 client.run(DISCORD_TOKEN)

@@ -54,7 +54,7 @@ def ingest_to_opensearch(data) -> int:
     docs.append({"index": {"_index": "docbot", "_id": point}})
     docs.append(json.dumps(data_list[point]))
 
-  response = client.bulk(docs)
+  response = client._client.bulk(docs)
   if response["errors"]:
     raise ValueError("Failed to insert data into client.")
   else:
