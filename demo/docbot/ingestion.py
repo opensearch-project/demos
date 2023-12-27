@@ -13,7 +13,8 @@ from docbot.util import opensearch_connection_builder, shorten_json_file_same_in
 # check out the _bulk python client helper.
 
 # Documents should be ingested from the /data/ dir
-DATA_PATH = os.path.abspath(os.path.join(__file__,  "..", "..","..","data"))
+DATA_PATH = os.path.abspath(os.path.join(__file__, "..", "..", "..", "data"))
+
 
 def read_files_from_data(PATH=DATA_PATH) -> list:
   """
@@ -33,26 +34,26 @@ def read_files_from_data(PATH=DATA_PATH) -> list:
     raise FileNotFoundError("Failed to find JSON files in /demos/data")
 
   for file in all_json:
-      path = os.path.join(PATH, file)
-      with open(path) as f:
-        for json_file in json.load(f):
-          shortened_json_files = shorten_json_file_same_index(json_file)
-          result.extend(shortened_json_files)
+    path = os.path.join(PATH, file)
+    with open(path) as f:
+      for json_file in json.load(f):
+        shortened_json_files = shorten_json_file_same_index(json_file)
+        result.extend(shortened_json_files)
 
   return result
 
-def ingest_to_opensearch(data) -> int:
+
+def ingest_to_opensearch(client, data) -> int:
   """
   Args:
     data: a list of json documents to be ingested
   Returns:
     None if successful, raise exception if failed
   """
-  client = opensearch_connection_builder()
   docs = []
   for point in range(len(data)):
     docs.append({"index": {"_index": "docbot", "_id": point}})
-    docs.append(json.dumps(data_list[point]))
+    docs.append(json.dumps(data[point]))
 
   response = client._client.bulk(docs)
   if response["errors"]:
@@ -60,10 +61,12 @@ def ingest_to_opensearch(data) -> int:
   else:
     print(f"Bulk-inserted {len(response['items'])} items.")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
   # do ingestions
   try:
+    client = opensearch_connection_builder()
     data_list = read_files_from_data()
-    ingest_to_opensearch(data_list)
+    ingest_to_opensearch(client, data_list)
   except Exception as e:
     print(f"An exception occured without finishing ingestion: {e}")

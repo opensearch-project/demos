@@ -5,5 +5,9 @@
 # Finally we will string the whole pipeline together with Neural Search
 # or Conversational search
 
+
 def generate_response(conversation_id, message):
-  pass
+  return "this is the end of the pipeline at generate_response function"
+
+
+# pass
