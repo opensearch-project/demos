@@ -1,0 +1,7 @@
+docker run --name=testsamlidp_idp \
+-p 8080:8080 \
+-p 8443:8443 \
+-e SIMPLESAMLPHP_SP_ENTITY_ID=http://app.example.com \
+-e SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=localhost:5601/osd/_plugins/_security/saml/acs \
+-e SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE=localhost:5601/osd/_plugins/_security/saml/logout \
+-d kristophjunge/test-saml-idp

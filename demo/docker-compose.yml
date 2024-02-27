@@ -5,16 +5,29 @@ services:
     image: opensearchproject/opensearch:${OPENSEARCH_VERSION}
     container_name: opensearch
     environment:
-      discovery.type: single-node
-      node.name: opensearch
-      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
-    volumes:
-      - opensearch-data:/usr/share/opensearch/data
+      - cluster.name=opensearch-saml-demo
+      - node.name=opensearch
+      - discovery.seed_hosts=opensearch
+      - cluster.initial_master_nodes=opensearch
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # Set the default password for admin user
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
     ports:
       - 9200:9200
-      - 9600:9600
+      - 9600:9600 # required for Performance Analyzer
     networks:
       - opensearch-net
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+      - ./saml/metadata.xml:/usr/share/opensearch/config/opensearch-security/metadata.xml # Do not modify this unless using a different IdP
+      - ./custom-config/config.yml:/usr/share/opensearch/config/opensearch-security/config.yml # Config for setting up saml authenticator
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:${OPENSEARCH_DASHBOARDS_VERSION}
@@ -27,8 +40,29 @@ services:
       OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
     networks:
       - opensearch-net
+    volumes:
+      - ./custom-config/opensearch_dashboards.yml:/usr/share/opensearch-dashboards/config/opensearch_dashboards.yml # Sets up multi auth: basic + saml
     depends_on:
       - opensearch
+  
+  # Sets up the demo IdP server with a sample user, see ./saml/authsources.php for more details
+  saml_test_idp:
+    image: kenchan0130/simplesamlphp
+    environment:
+      SIMPLESAMLPHP_SP_ENTITY_ID: opensearch-saml-login
+      SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://localhost:5601/_opendistro/_security/saml/acs
+      SIMPLESAMLPHP_SP_SINGLE_LOGOUT_SERVICE: http://localhost:5601/
+      SIMPLESAMLPHP_ADMIN_PASSWORD: test
+      SIMPLESAMLPHP_SECRET_SALT: salt
+    ports:
+    - "8080:8080"
+    - "8443:8443"
+    volumes:
+      - ./saml/config/authsources.php:/var/www/simplesamlphp/config/authsources.php
+      - ./saml/config-templates/authsources.php:/var/www/simplesamlphp/config-templates/authsources.php
+      - ./saml/metadata/saml20-idp-hosted.php:/var/www/simplesamlphp/metadata/saml20-idp-hosted.php
+      - ./saml/metadata-templates/saml20-idp-hosted.php:/var/www/simplesamlphp/metadata-templates/saml20-idp-hosted.php
+    
 
 volumes:
   opensearch-data:
