@@ -59,9 +59,7 @@ services:
     - "8443:8443"
     volumes:
       - ./saml/config/authsources.php:/var/www/simplesamlphp/config/authsources.php
-      - ./saml/config-templates/authsources.php:/var/www/simplesamlphp/config-templates/authsources.php
       - ./saml/metadata/saml20-idp-hosted.php:/var/www/simplesamlphp/metadata/saml20-idp-hosted.php
-      - ./saml/metadata-templates/saml20-idp-hosted.php:/var/www/simplesamlphp/metadata-templates/saml20-idp-hosted.php
     
 
 volumes:
