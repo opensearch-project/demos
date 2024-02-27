@@ -1,6 +1,6 @@
-## OpenSearch Demos
+## OpenSearch SAML demo
 
-This branch contains the barebones starting point for building a live demo for OpenSearch.
+This branch contains the demo setup for testing SAML auth.
 
 ## Code of Conduct
 

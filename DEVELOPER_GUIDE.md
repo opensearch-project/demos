@@ -45,15 +45,17 @@ pre-commit install --install-hooks -t pre-commit -t commit-msg
 
 ### Docker Compose
 
-Docker Compose is used to spin up and configure all the containers. It's important to pass in the environment file to get the right container versions if specified.
+Docker Compose is used to spin up and configure all the containers. The environment file `.env` defined in the `demo` folder will be read to configure environment variables for `docker-compose.yml`.
 
-```
-# Downloading the containers
-cd demo && docker-compose --env-file env pull
+```zsh
+# Checkout `demo` folder
+cd demo
 
 # Running
-docker-compose --env-file env up
+docker-compose up
 
 # Stopping
-docker-compose --env-file env down
+docker-compose down
 ```
+
+Note: To setup a fresh cluster every run, pass option `-v` to `docker-compose down` command.
