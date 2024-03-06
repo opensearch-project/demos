@@ -1,0 +1,48 @@
+---
+
+# Copyright OpenSearch Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# This is the main OpenSearch Security configuration file where authentication
+# and authorization is defined.
+
+_meta:
+  type: "config"
+  config_version: 2
+
+config:
+  dynamic:
+    http:
+      anonymous_auth_enabled: false # true
+      xff:
+        enabled: false
+    authc:
+      basic_internal_auth_domain:
+        description: "Authenticate via HTTP Basic against internal users database"
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: intern
+      saml_auth_domain:
+        http_enabled: true
+        transport_enabled: false
+        order: 1
+        http_authenticator:
+          type: saml
+          challenge: true
+          config:
+            idp:
+              entity_id: http://localhost:8080/simplesaml/saml2/idp/metadata.php
+              metadata_file: "/usr/share/opensearch/config/opensearch-security/metadata.xml"
+            sp:
+              entity_id: opensearch-saml-login
+            kibana_url: http://localhost:5601/
+            roles_key: Role
+            subject_key: NameID
+            exchange_key: 'TXkgU0FNTCBTZWNyZXQgZXhjaGFuZ2Uga2V5LiBBIHNlY3JldCB0aGF0IG5vIG9uZSBvciBib3RuZXQgaW4gdGhlIHdvcmxkIHdpbGwgZXZlciBiZSBhYmxlIHRvIGNyYWNrLg=='
+        authentication_backend:
+          type: noop
