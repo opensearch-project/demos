@@ -13,7 +13,7 @@ dotenv.load_dotenv()
 
 
 class ClusterBootstrap:
-  def __init__(self, use_ssl=True):
+  def __init__(self, use_ssl=False):
     self.Cohere_key = getenv('COHERE_KEY')
     self.model_group_id = ""
     self.connector_id = ""
@@ -59,16 +59,14 @@ class ClusterBootstrap:
       ]
     }
 
-    if 'persistent' in current_settings and opensearch_compare_dictionaries(
-        data, current_settings['persistent']):
-      print("Cluster settings are already initialized!")
-      return
-
-    response = self.client.cluster.put_settings(body={"persistent": data})
+    if 'persistent' in current_settings and opensearch_compare_dictionaries(data, current_settings['persistent']):
+        print("Cluster settings are already initialized!")
+        return
+    response = self.client._client.cluster.put_settings(body={"persistent": data})
     if response and 'acknowledged' in response and response['acknowledged']:
-      print("Cluster settings initialized successfully!")
+        print("Cluster settings initialized successfully!")
     else:
-      raise Exception("Failed to initialize cluster settings.")
+        raise Exception("Failed to initialize cluster settings.")
 
   def _init_index_template(self, template_name="nlp-template"):
     """
@@ -223,28 +221,29 @@ class ClusterBootstrap:
 
   def _initialize_ingestion_pipeline(self, id: str = "cohere-ingest-pipeline"):
     pipeline_data = {
-      "description":
-        "Cohere Neural Search Pipeline",
-      "processors": [{
-        "text_embedding": {
-          "embedding_model": self.embedding_model,
-          "field_map": {
-            "content": "content_embedding"
-          }
-        }
-      }]
+        "description": "Cohere Neural Search Pipeline",
+        "processors": [
+            {
+                "text_embedding": {
+                    "embedding_model": self.embedding_model,
+                    "field_map": {
+                        "content": "content_embedding"
+                    }
+                }
+            }
+        ]
     }
 
     try:
-      self.client._client.ingest.get_pipeline(id=id)
-      print(f"Pipeline {id} already exists. Skipping initialization.")
-      return
+        self.client._client.ingest.get_pipeline(id=id)
+        print(f"Pipeline {id} already exists. Skipping initialization.")
+        return
     except:
-      response = self.client._client.ingest.put_pipeline(id=id, body=pipeline_data)
-      if response and 'acknowledged' in response and response['acknowledged']:
-        print(f"Pipeline {id} initialized successfully!")
-      else:
-        raise Exception("Failed to initialize pipeline.")
+        response = self.client._client.ingest.put_pipeline(id=id, body=pipeline_data)
+        if response and 'acknowledged' in response and response['acknowledged']:
+            print(f"Pipeline {id} initialized successfully!")
+        else:
+            raise Exception("Failed to initialize pipeline.")
 
   def _initialize_rag_search_pipeline(self, id: str = "rag-search-pipeline") -> None:
     """
@@ -376,7 +375,9 @@ class ClusterBootstrap:
 
 
 if __name__ == "__main__":
-  try:
-    cluster_bootstrap = ClusterBootstrap(use_ssl="--no-ssl" not in sys.argv)
-  except Exception as e:
-    print(f"An error occurred while initializing cluster bootstrap: {e}")
+    try:
+        # cluster_bootstrap = ClusterBootstrap(
+        #     use_ssl="--no-ssl" not in sys.argv)
+        cluster_bootstrap = ClusterBootstrap(use_ssl=True)
+    except Exception as e:
+        print(f"An error occurred while initializing cluster bootstrap: {e}")

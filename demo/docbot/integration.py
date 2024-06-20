@@ -7,31 +7,49 @@
 import discord, sys
 import dotenv
 from os import getenv
-from docbot import DocBot
-dotenv.load_dotenv()
-DISCORD_TOKEN= getenv("DISCORD_TOKEN")
-
 
 sys.path.append('./demo/')
+print(sys.path)
+from docbot.controller import Controller
+from docbot.util import opensearch_connection_builder
+
+dotenv.load_dotenv()
+DISCORD_TOKEN = getenv("DISCORD_TOKEN")
+
 intents = discord.Intents.default()
 intents.message_content = True
 
-
 client = discord.Client(intents=intents)
-docbot = DocBot()
+docbot = Controller(opensearch_connection_builder())
+
+conversation_history = {}
+
 
 @client.event
 async def on_ready():
-    print(f'Successfully logged in as {client.user}')
+  print(f'Successfully logged in as {client.user}')
+
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
-        return
+  global conversation_history
+  if message.author == client.user:
+    return
+  # WIP
+  if message.content.startswith('!docbot'):
+    response = docbot.handle_message(message)
+    await message.channel.send("History so far: " + str(conversation_history) + " Response: " +
+                               response)
+    await message.channel.send("Channel: " + message.channel.name + " Author: " +
+                               message.author.name + " Message: " + message.content[7:])
+  else:
+    conversation_history.update({
+      message.id: {
+        "channel": message.channel.name,
+        "author": message.author.name,
+        "content": message.content
+      }
+    })
 
-    if message.content.startswith('!docbot'):
-        msg = message.content
-        response = docbot.handle_message(msg)
-        await message.channel.send(response)
 
 client.run(DISCORD_TOKEN)
