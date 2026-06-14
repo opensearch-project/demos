@@ -6,7 +6,7 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 | Maintainer               | GitHub ID                                               | Affiliation |
 |--------------------------| ------------------------------------------------------- | ----------- |
-| David Tippett            | [dtaivpp](https://github.com/dtaivpp)                   | Amazon      |
+| David Tippett            | [dtaivpp](https://github.com/dtaivpp)                   | Independent Consultant      |
 | Nate Boot                | [nateynateynate](https://github.com/nateynateynate)     | Amazon      |
 
 
