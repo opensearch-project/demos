@@ -6,7 +6,6 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 | Maintainer               | GitHub ID                                               | Affiliation |
 |--------------------------| ------------------------------------------------------- | ----------- |
-| Nate Boot                | [nateynateynate](https://github.com/nateynateynate)     | Amazon      |
 
 
 ## Emeritus
@@ -15,3 +14,4 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 |-------------------------|---------------------------------------------|-------------|
 | Kyle Davis   | [stockholmux](https://github.com/stockholmux)          | Amazon      |
 | David Tippett            | [dtaivpp](https://github.com/dtaivpp)                   | Amazon      |
+| Nate Boot               | [nateynateynate](https://github.com/nateynateynate) | Amazon      |
